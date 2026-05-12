@@ -16,6 +16,7 @@ export default function AppRoutes({
 }: Props) {
   return (
     <Routes>
+
       <Route
         path="/"
         element={
@@ -27,14 +28,16 @@ export default function AppRoutes({
         path="/dashboard"
         element={
           <ProtectedRoute user={user}>
+
             <Dashboard
-              email={user?.email}
               userId={user?.id}
               onLogout={handleLogout}
             />
+
           </ProtectedRoute>
         }
       />
+
     </Routes>
   )
 }

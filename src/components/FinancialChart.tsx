@@ -20,19 +20,23 @@ export default function FinancialChart({
   investments,
   saved,
 }: Props) {
+
   const data = [
     {
       name: 'Receitas',
       value: incomes,
     },
+
     {
       name: 'Despesas',
       value: expenses,
     },
+
     {
       name: 'Investimentos',
       value: investments,
     },
+
     {
       name: 'Guardado',
       value: saved,
@@ -47,14 +51,21 @@ export default function FinancialChart({
   ]
 
   return (
-    <div className="bg-gray-800 p-6 rounded-2xl shadow-lg">
+    <div className="bg-gray-800 p-6 rounded-2xl shadow-lg w-full">
+
       <h2 className="text-2xl font-bold mb-4 text-white">
         Visão Financeira
       </h2>
 
-      <div className="w-full h-96">
-        <ResponsiveContainer>
+      <div className="w-full min-h-[400px]">
+
+        <ResponsiveContainer
+          width="100%"
+          height={400}
+        >
+
           <PieChart>
+
             <Pie
               data={data}
               cx="50%"
@@ -63,19 +74,26 @@ export default function FinancialChart({
               dataKey="value"
               label
             >
+
               {data.map((_, index) => (
                 <Cell
                   key={`cell-${index}`}
                   fill={COLORS[index]}
                 />
               ))}
+
             </Pie>
 
             <Tooltip />
+
             <Legend />
+
           </PieChart>
+
         </ResponsiveContainer>
+
       </div>
+
     </div>
   )
 }

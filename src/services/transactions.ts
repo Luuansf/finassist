@@ -31,6 +31,18 @@ export async function getTransactions(
     })
 }
 
+export async function getAllTransactions(
+  userId: string
+) {
+  return await supabase
+    .from('transactions')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', {
+      ascending: false,
+    })
+}
+
 export async function deleteTransaction(
   id: string
 ) {

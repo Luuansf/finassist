@@ -1,8 +1,12 @@
-import { supabase } from '../services/supabase'
+import { Trash2 } from 'lucide-react'
+
+import {
+  deleteTransaction,
+} from '../services/transactions'
 
 import { formatCurrency } from '../utils/formatCurrency'
 
-import { categoryConfig } from '../utils/categoryConfig'
+import { categories } from '../data/categories'
 
 type Props = {
   transaction: any
@@ -16,69 +20,81 @@ export default function TransactionCard({
   async function handleDelete() {
     const confirmDelete =
       confirm(
-        'Deseja remover esta transação?'
+        'Deseja excluir esta transação?'
       )
 
     if (!confirmDelete) return
 
-    const { error } =
-      await supabase
-        .from('transactions')
-        .delete()
-        .eq('id', transaction.id)
-
-    if (error) {
-      alert(error.message)
-      return
-    }
+    await deleteTransaction(
+      transaction.id
+    )
 
     onDeleted()
   }
 
-  const categoryKey =
-    transaction.category?.toLowerCase() ||
-    'outros'
+  const categoryData =
+    categories.find(
+      (c) =>
+        c.name ===
+        transaction.category
+    )
 
-  const category =
-    categoryConfig[categoryKey] ||
-    categoryConfig.outros
+  const icon =
+    categoryData?.icon || '💸'
+
+  const color =
+    transaction.type === 'income'
+      ? 'text-green-400'
+      : transaction.type ===
+          'expense'
+        ? 'text-red-400'
+        : transaction.type ===
+            'investment'
+          ? 'text-yellow-400'
+          : 'text-purple-400'
 
   return (
-    <div
-      className={`p-4 rounded-2xl flex justify-between items-center ${category.color}`}
-    >
+    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex items-center justify-between">
 
       <div className="flex items-center gap-3">
 
-        <div className="text-2xl">
-          {category.icon}
+        <div className="w-12 h-12 rounded-2xl bg-gray-800 flex items-center justify-center text-2xl">
+          {icon}
         </div>
 
         <div>
-          <h3 className="font-bold capitalize">
-            {transaction.category}
+
+          <h3 className="font-semibold">
+            {
+              transaction.category
+            }
           </h3>
 
-          <p className="text-sm opacity-80">
-            {transaction.description}
+          <p className="text-sm text-gray-400">
+            {
+              transaction.description
+            }
           </p>
+
         </div>
 
       </div>
 
       <div className="flex flex-col items-end gap-2">
 
-        <strong>
+        <p
+          className={`font-bold ${color}`}
+        >
           {formatCurrency(
             transaction.amount
           )}
-        </strong>
+        </p>
 
         <button
           onClick={handleDelete}
-          className="bg-black/20 px-2 py-1 rounded text-xs"
+          className="text-red-400"
         >
-          Excluir
+          <Trash2 size={18} />
         </button>
 
       </div>

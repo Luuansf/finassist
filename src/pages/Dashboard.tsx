@@ -15,19 +15,15 @@ import { formatCurrency } from '../utils/formatCurrency'
 
 import SummaryCard from '../components/SummaryCard'
 
-import TransactionCard from '../components/TransactionCard'
-
-import FinancialChart from '../components/FinancialChart'
-
-import MonthlyEvolutionChart from '../components/MonthlyEvolutionChart'
-
 import FinancialInsights from '../components/FinancialInsights'
-
-import ExportButtons from '../components/ExportButtons'
 
 import FinancialBreakdown from '../components/FinancialBreakdown'
 
 import ProfileModal from '../components/ProfileModal'
+
+import BottomNav from '../components/BottomNav'
+
+import PremiumBalanceCard from '../components/PremiumBalanceCard'
 
 type Props = {
   userId: string
@@ -41,18 +37,14 @@ export default function Dashboard({
   const currentMonth =
     new Date().toISOString().slice(0, 7)
 
-  const [selectedMonth, setSelectedMonth] =
-    useState(currentMonth)
+  const [activeTab, setActiveTab] =
+    useState('home')
 
-  const [type, setType] = useState('')
   const [category, setCategory] =
     useState('')
   const [amount, setAmount] =
     useState('')
   const [description, setDescription] =
-    useState('')
-
-  const [monthlyGoal, setMonthlyGoal] =
     useState('')
 
   const [transactions, setTransactions] =
@@ -88,8 +80,6 @@ export default function Dashboard({
         setUserName(
           user.user_metadata.name
         )
-      } else {
-        setUserName('Usuário')
       }
 
       if (
@@ -151,7 +141,7 @@ export default function Dashboard({
     const { data, error } =
       await getTransactions(
         userId,
-        selectedMonth
+        currentMonth
       )
 
     if (error) {
@@ -164,7 +154,7 @@ export default function Dashboard({
 
   useEffect(() => {
     loadTransactions()
-  }, [selectedMonth])
+  }, [])
 
   // =========================
   // VALOR BR
@@ -184,28 +174,33 @@ export default function Dashboard({
   // CRIAR TRANSAÇÃO
   // =========================
 
-  async function handleCreateTransaction() {
+  async function handleAddInvestment() {
     const formattedAmount =
       convertBrazilianValue(amount)
 
-    const { error } =
-      await createTransaction({
-        user_id: userId,
-        type,
-        category,
-        amount: formattedAmount,
-        description,
-        month: selectedMonth,
-      })
-
-    if (error) {
-      alert(error.message)
+    if (!formattedAmount) {
+      alert('Digite um valor')
       return
     }
 
-    setType('')
-    setCategory('')
+    const created =
+      await createTransaction({
+        user_id: userId,
+        type: 'investment',
+        category:
+          category || 'Investimento',
+        amount: formattedAmount,
+        description,
+        month: currentMonth,
+      })
+
+    if (created.error) {
+      alert(created.error.message)
+      return
+    }
+
     setAmount('')
+    setCategory('')
     setDescription('')
 
     loadTransactions()
@@ -256,22 +251,6 @@ export default function Dashboard({
     investments + saved
 
   // =========================
-  // META
-  // =========================
-
-  const goalValue =
-    Number(
-      monthlyGoal.replace(',', '.')
-    ) || 0
-
-  const goalProgress =
-    goalValue > 0
-      ? (availableBalance /
-          goalValue) *
-        100
-      : 0
-
-  // =========================
   // DETALHAMENTO
   // =========================
 
@@ -288,9 +267,9 @@ export default function Dashboard({
   // =========================
 
   return (
-    <div className="min-h-screen bg-black text-white p-4">
+    <div className="min-h-screen bg-black text-white pb-28">
 
-      <div className="max-w-2xl mx-auto flex flex-col gap-4">
+      <div className="max-w-2xl mx-auto p-4 flex flex-col gap-4">
 
         {/* HEADER */}
         <div className="flex justify-between items-center">
@@ -357,285 +336,170 @@ export default function Dashboard({
 
         </div>
 
-        {/* SALDO */}
-        <div className="bg-green-600 p-6 rounded-2xl">
+        {/* HOME */}
+        {activeTab === 'home' && (
+          <>
 
-          <p className="text-sm">
-            Saldo disponível
-          </p>
-
-          <h2 className="text-3xl font-bold">
-            {formatCurrency(
-              availableBalance
-            )}
-          </h2>
-
-        </div>
-
-        {/* PATRIMÔNIO */}
-        <div className="bg-indigo-600 p-4 rounded-2xl">
-
-          <p className="text-sm">
-            Patrimônio total
-          </p>
-
-          <h3 className="text-xl font-bold">
-            {formatCurrency(
-              totalWealth
-            )}
-          </h3>
-
-        </div>
-
-        {/* EXPORTAÇÃO */}
-        <ExportButtons
-          transactions={transactions}
-        />
-
-        {/* MÊS */}
-        <div className="bg-gray-900 border border-gray-700 p-4 rounded-2xl">
-
-          <p className="text-sm mb-2">
-            Selecione o mês
-          </p>
-
-          <input
-            type="month"
-            value={selectedMonth}
-            onChange={(e) =>
-              setSelectedMonth(
-                e.target.value
-              )
-            }
-            className="w-full p-2 bg-gray-800 rounded"
-          />
-
-        </div>
-
-        {/* META */}
-        <div className="bg-gray-900 border border-gray-700 p-4 rounded-2xl">
-
-          <p className="text-sm mb-2">
-            Meta mensal
-          </p>
-
-          <input
-            className="w-full p-2 bg-gray-800 rounded"
-            placeholder="Ex: 2000"
-            value={monthlyGoal}
-            onChange={(e) =>
-              setMonthlyGoal(
-                e.target.value
-              )
-            }
-          />
-
-          <div className="w-full bg-gray-800 h-2 rounded mt-3">
-
-            <div
-              className="bg-green-500 h-2 rounded"
-              style={{
-                width: `${Math.min(
-                  goalProgress,
-                  100
-                )}%`,
-              }}
-            />
-
-          </div>
-
-          <p className="text-xs mt-1 text-gray-400">
-            {goalProgress.toFixed(1)}%
-          </p>
-
-        </div>
-
-        {/* INSIGHTS */}
-        <FinancialInsights
-          incomes={incomes}
-          expenses={expenses}
-          investments={investments}
-          saved={saved}
-        />
-
-        {/* RESUMOS */}
-        <div className="grid grid-cols-2 gap-2">
-
-          <div
-            onClick={() =>
-              openBreakdown(
-                'income',
-                'Receitas'
-              )
-            }
-          >
-            <SummaryCard
-              title="Receitas"
+            <PremiumBalanceCard
+              title="Saldo disponível"
               amount={formatCurrency(
-                incomes
+                availableBalance
               )}
-              color="bg-green-500"
+              subtitle="Valor livre no mês atual"
+              gradient="bg-gradient-to-br from-green-500 to-emerald-700"
             />
-          </div>
 
-          <div
-            onClick={() =>
-              openBreakdown(
-                'expense',
-                'Despesas'
-              )
-            }
-          >
-            <SummaryCard
-              title="Despesas"
+            <PremiumBalanceCard
+              title="Patrimônio total"
               amount={formatCurrency(
-                expenses
+                totalWealth
               )}
-              color="bg-red-500"
+              subtitle="Investimentos + valores guardados"
+              gradient="bg-gradient-to-br from-indigo-500 to-purple-700"
             />
+
+            <FinancialInsights
+              incomes={incomes}
+              expenses={expenses}
+              investments={investments}
+              saved={saved}
+            />
+
+            <div className="grid grid-cols-2 gap-2">
+
+              <div
+                onClick={() =>
+                  openBreakdown(
+                    'income',
+                    'Receitas'
+                  )
+                }
+              >
+                <SummaryCard
+                  title="Receitas"
+                  amount={formatCurrency(
+                    incomes
+                  )}
+                  color="bg-green-500"
+                />
+              </div>
+
+              <div
+                onClick={() =>
+                  openBreakdown(
+                    'expense',
+                    'Despesas'
+                  )
+                }
+              >
+                <SummaryCard
+                  title="Despesas"
+                  amount={formatCurrency(
+                    expenses
+                  )}
+                  color="bg-red-500"
+                />
+              </div>
+
+              <div
+                onClick={() =>
+                  openBreakdown(
+                    'investment',
+                    'Investimentos'
+                  )
+                }
+              >
+                <SummaryCard
+                  title="Invest"
+                  amount={formatCurrency(
+                    investments
+                  )}
+                  color="bg-yellow-500"
+                />
+              </div>
+
+              <div
+                onClick={() =>
+                  openBreakdown(
+                    'saved',
+                    'Guardado'
+                  )
+                }
+              >
+                <SummaryCard
+                  title="Guardado"
+                  amount={formatCurrency(
+                    saved
+                  )}
+                  color="bg-purple-500"
+                />
+              </div>
+
+            </div>
+
+          </>
+        )}
+
+        {/* ADICIONAR */}
+        {activeTab === 'add' && (
+          <div className="bg-gray-900 p-4 rounded-2xl flex flex-col gap-3">
+
+            <h2 className="text-xl font-bold">
+              Novo investimento
+            </h2>
+
+            <input
+              placeholder="Categoria"
+              value={category}
+              onChange={(e) =>
+                setCategory(
+                  e.target.value
+                )
+              }
+              className="p-3 bg-gray-800 rounded-xl"
+            />
+
+            <input
+              placeholder="Valor"
+              value={amount}
+              onChange={(e) =>
+                setAmount(
+                  e.target.value
+                )
+              }
+              className="p-3 bg-gray-800 rounded-xl"
+            />
+
+            <input
+              placeholder="Descrição"
+              value={description}
+              onChange={(e) =>
+                setDescription(
+                  e.target.value
+                )
+              }
+              className="p-3 bg-gray-800 rounded-xl"
+            />
+
+            <button
+              onClick={
+                handleAddInvestment
+              }
+              className="bg-green-500 p-3 rounded-xl font-bold"
+            >
+              Investir
+            </button>
+
           </div>
-
-          <div
-            onClick={() =>
-              openBreakdown(
-                'investment',
-                'Investimentos'
-              )
-            }
-          >
-            <SummaryCard
-              title="Invest"
-              amount={formatCurrency(
-                investments
-              )}
-              color="bg-yellow-500"
-            />
-          </div>
-
-          <div
-            onClick={() =>
-              openBreakdown(
-                'saved',
-                'Guardado'
-              )
-            }
-          >
-            <SummaryCard
-              title="Guardado"
-              amount={formatCurrency(
-                saved
-              )}
-              color="bg-purple-500"
-            />
-          </div>
-
-        </div>
-
-        {/* GRÁFICOS */}
-        <FinancialChart
-          incomes={incomes}
-          expenses={expenses}
-          investments={investments}
-          saved={saved}
-        />
-
-        <MonthlyEvolutionChart
-          transactions={transactions}
-        />
-
-        {/* FORM */}
-        <div className="bg-gray-900 p-4 rounded-2xl flex flex-col gap-2">
-
-          <select
-            value={type}
-            onChange={(e) =>
-              setType(e.target.value)
-            }
-            className="p-2 bg-gray-800 rounded"
-          >
-            <option value="">
-              Tipo
-            </option>
-
-            <option value="income">
-              Receita
-            </option>
-
-            <option value="expense">
-              Despesa
-            </option>
-
-            <option value="investment">
-              Investimento
-            </option>
-
-            <option value="saved">
-              Guardado
-            </option>
-
-          </select>
-
-          <input
-            placeholder="Categoria"
-            value={category}
-            onChange={(e) =>
-              setCategory(
-                e.target.value
-              )
-            }
-            className="p-2 bg-gray-800 rounded"
-          />
-
-          <input
-            placeholder="Valor"
-            value={amount}
-            onChange={(e) =>
-              setAmount(e.target.value)
-            }
-            className="p-2 bg-gray-800 rounded"
-          />
-
-          <input
-            placeholder="Descrição"
-            value={description}
-            onChange={(e) =>
-              setDescription(
-                e.target.value
-              )
-            }
-            className="p-2 bg-gray-800 rounded"
-          />
-
-          <button
-            onClick={handleCreateTransaction}
-            className="bg-green-500 p-2 rounded font-bold"
-          >
-            Adicionar
-          </button>
-
-        </div>
-
-        {/* TRANSAÇÕES */}
-        <div className="flex flex-col gap-2">
-
-          {transactions.length ===
-            0 && (
-            <p className="text-gray-400 text-center">
-              Nenhuma transação neste mês
-            </p>
-          )}
-
-          {transactions.map((t) => (
-            <TransactionCard
-              key={t.id}
-              transaction={t}
-              onDeleted={loadTransactions}
-            />
-          ))}
-
-        </div>
+        )}
 
       </div>
+
+      {/* BOTTOM NAV */}
+      <BottomNav
+        active={activeTab}
+        onChange={setActiveTab}
+      />
 
       {/* MODAL DETALHAMENTO */}
       {breakdownType && (

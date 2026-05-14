@@ -1,14 +1,24 @@
 import { useEffect, useState } from 'react'
 
-import Login from './pages/Login'
+import AppRoutes from './routes/AppRoutes'
 
-import Dashboard from './pages/Dashboard'
+import {
+  supabase,
+} from './services/supabase'
 
-import { supabase } from './services/supabase'
+import SplashScreen from './components/SplashScreen'
+
+import Onboarding from './components/Onboarding'
 
 export default function App() {
   const [user, setUser] =
     useState<any>(null)
+
+  const [loading, setLoading] =
+    useState(true)
+
+  const [showOnboarding, setShowOnboarding] =
+    useState(false)
 
   useEffect(() => {
     async function getUser() {
@@ -17,49 +27,71 @@ export default function App() {
       } =
         await supabase.auth.getSession()
 
-      if (session?.user) {
-        setUser(session.user)
+      setUser(session?.user || null)
+
+      const alreadySeen =
+        localStorage.getItem(
+          'finassist-onboarding'
+        )
+
+      if (!alreadySeen) {
+        setShowOnboarding(true)
       }
+
+      setTimeout(() => {
+        setLoading(false)
+      }, 1800)
     }
 
     getUser()
 
     const {
-      data: listener,
+      data: authListener,
     } =
       supabase.auth.onAuthStateChange(
-        (_event, session) => {
-          if (session?.user) {
-            setUser(session.user)
-          } else {
-            setUser(null)
-          }
+        (_, session) => {
+          setUser(
+            session?.user || null
+          )
         }
       )
 
     return () => {
-      listener.subscription.unsubscribe()
+      authListener.subscription.unsubscribe()
     }
   }, [])
 
-  async function handleLogout() {
-    await supabase.auth.signOut()
-  }
-
-  if (!user) {
-    return (
-      <Login
-        onLogin={(loggedUser) =>
-          setUser(loggedUser)
-        }
-      />
+  function finishOnboarding() {
+    localStorage.setItem(
+      'finassist-onboarding',
+      'true'
     )
+
+    setShowOnboarding(false)
   }
 
   return (
-    <Dashboard
-      userId={user.id}
-      onLogout={handleLogout}
-    />
+    <>
+      <SplashScreen loading={loading} />
+
+      {!loading &&
+        showOnboarding && (
+          <Onboarding
+            onFinish={
+              finishOnboarding
+            }
+          />
+        )}
+
+      {!loading &&
+        !showOnboarding && (
+          <AppRoutes
+            user={user}
+            handleLogout={async () => {
+              await supabase.auth.signOut()
+            }}
+          />
+        )}
+    </>
   )
 }

@@ -1,3 +1,5 @@
+import { Navigate } from 'react-router-dom'
+
 type Props = {
   user: any
   children: React.ReactNode
@@ -8,7 +10,7 @@ export default function ProtectedRoute({
   children,
 }: Props) {
   if (!user) {
-    return null
+    return <Navigate to="/" replace />
   }
 
   return <>{children}</>

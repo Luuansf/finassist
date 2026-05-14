@@ -40,10 +40,15 @@ export default function Dashboard({
   const [activeTab, setActiveTab] =
     useState('home')
 
+  const [type, setType] =
+    useState('income')
+
   const [category, setCategory] =
     useState('')
+
   const [amount, setAmount] =
     useState('')
+
   const [description, setDescription] =
     useState('')
 
@@ -174,7 +179,7 @@ export default function Dashboard({
   // CRIAR TRANSAÇÃO
   // =========================
 
-  async function handleAddInvestment() {
+  async function handleCreateTransaction() {
     const formattedAmount =
       convertBrazilianValue(amount)
 
@@ -186,9 +191,9 @@ export default function Dashboard({
     const created =
       await createTransaction({
         user_id: userId,
-        type: 'investment',
+        type,
         category:
-          category || 'Investimento',
+          category || 'Sem categoria',
         amount: formattedAmount,
         description,
         month: currentMonth,
@@ -202,6 +207,7 @@ export default function Dashboard({
     setAmount('')
     setCategory('')
     setDescription('')
+    setType('income')
 
     loadTransactions()
   }
@@ -226,23 +232,80 @@ export default function Dashboard({
       0
     )
 
-  const investments = transactions
-    .filter(
-      (t) => t.type === 'investment'
-    )
-    .reduce(
-      (acc, t) =>
-        acc + Number(t.amount),
-      0
-    )
+  // =========================
+  // INVESTIMENTOS
+  // =========================
 
-  const saved = transactions
-    .filter((t) => t.type === 'saved')
-    .reduce(
-      (acc, t) =>
-        acc + Number(t.amount),
-      0
-    )
+  const investmentsAdded =
+    transactions
+      .filter(
+        (t) =>
+          t.type ===
+          'investment'
+      )
+      .reduce(
+        (acc, t) =>
+          acc +
+          Number(t.amount),
+        0
+      )
+
+  const investmentsWithdraw =
+    transactions
+      .filter(
+        (t) =>
+          t.type ===
+          'withdraw_investment'
+      )
+      .reduce(
+        (acc, t) =>
+          acc +
+          Number(t.amount),
+        0
+      )
+
+  const investments =
+    investmentsAdded -
+    investmentsWithdraw
+
+  // =========================
+  // GUARDADO
+  // =========================
+
+  const savedAdded =
+    transactions
+      .filter(
+        (t) =>
+          t.type === 'saved'
+      )
+      .reduce(
+        (acc, t) =>
+          acc +
+          Number(t.amount),
+        0
+      )
+
+  const savedWithdraw =
+    transactions
+      .filter(
+        (t) =>
+          t.type ===
+          'withdraw_saved'
+      )
+      .reduce(
+        (acc, t) =>
+          acc +
+          Number(t.amount),
+        0
+      )
+
+  const saved =
+    savedAdded -
+    savedWithdraw
+
+  // =========================
+  // TOTAIS
+  // =========================
 
   const availableBalance =
     incomes - expenses
@@ -410,7 +473,7 @@ export default function Dashboard({
                 }
               >
                 <SummaryCard
-                  title="Invest"
+                  title="Investimentos"
                   amount={formatCurrency(
                     investments
                   )}
@@ -445,8 +508,43 @@ export default function Dashboard({
           <div className="bg-gray-900 p-4 rounded-2xl flex flex-col gap-3">
 
             <h2 className="text-xl font-bold">
-              Novo investimento
+              Nova transação
             </h2>
+
+            <select
+              value={type}
+              onChange={(e) =>
+                setType(
+                  e.target.value
+                )
+              }
+              className="p-3 bg-gray-800 rounded-xl"
+            >
+              <option value="income">
+                Receita
+              </option>
+
+              <option value="expense">
+                Despesa
+              </option>
+
+              <option value="investment">
+                Investimento
+              </option>
+
+              <option value="withdraw_investment">
+                Retirada investimento
+              </option>
+
+              <option value="saved">
+                Guardado
+              </option>
+
+              <option value="withdraw_saved">
+                Retirada guardado
+              </option>
+
+            </select>
 
             <input
               placeholder="Categoria"
@@ -483,11 +581,11 @@ export default function Dashboard({
 
             <button
               onClick={
-                handleAddInvestment
+                handleCreateTransaction
               }
               className="bg-green-500 p-3 rounded-xl font-bold"
             >
-              Investir
+              Adicionar Transação
             </button>
 
           </div>

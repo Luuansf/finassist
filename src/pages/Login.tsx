@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+import { useNavigate } from 'react-router-dom'
+
 import { supabase } from '../services/supabase'
 
 type Props = {
@@ -9,6 +11,8 @@ type Props = {
 export default function Login({
   onLogin,
 }: Props) {
+  const navigate = useNavigate()
+
   const [email, setEmail] =
     useState('')
 
@@ -40,6 +44,8 @@ export default function Login({
 
     if (data?.user) {
       onLogin(data.user)
+
+      navigate('/dashboard')
     }
 
     setLoading(false)
@@ -71,6 +77,8 @@ export default function Login({
 
     if (data?.user) {
       onLogin(data.user)
+
+      navigate('/dashboard')
     }
 
     setLoading(false)
@@ -81,7 +89,6 @@ export default function Login({
 
       <div className="w-full max-w-sm bg-gray-900 border border-gray-800 rounded-3xl p-6 flex flex-col gap-4 shadow-2xl">
 
-        {/* LOGO */}
         <div className="text-center mb-2">
 
           <h1 className="text-4xl font-black text-green-400">
@@ -94,7 +101,6 @@ export default function Login({
 
         </div>
 
-        {/* INPUT NOME */}
         <input
           type="text"
           placeholder="Seu nome"
@@ -105,7 +111,6 @@ export default function Login({
           }
         />
 
-        {/* EMAIL */}
         <input
           type="email"
           placeholder="Seu email"
@@ -116,7 +121,6 @@ export default function Login({
           }
         />
 
-        {/* SENHA */}
         <input
           type="password"
           placeholder="Sua senha"
@@ -129,16 +133,16 @@ export default function Login({
           }
         />
 
-        {/* LOGIN */}
         <button
           onClick={handleLogin}
           disabled={loading}
           className="bg-green-500 hover:bg-green-600 transition-all p-3 rounded-xl font-bold"
         >
-          Entrar
+          {loading
+            ? 'Entrando...'
+            : 'Entrar'}
         </button>
 
-        {/* CADASTRO */}
         <button
           onClick={handleRegister}
           disabled={loading}

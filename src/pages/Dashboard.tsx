@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import {
   createTransaction,
   getTransactions,
+  getAllTransactions,
 } from '../services/transactions'
 
 import { uploadAvatar } from '../services/profile'
@@ -37,11 +38,11 @@ export default function Dashboard({
   const currentMonth =
     new Date().toISOString().slice(0, 7)
 
+  const [selectedMonth, setSelectedMonth] =
+    useState(currentMonth)
+
   const [activeTab, setActiveTab] =
     useState('home')
-
-  const [type, setType] =
-    useState('income')
 
   const [category, setCategory] =
     useState('')
@@ -52,7 +53,23 @@ export default function Dashboard({
   const [description, setDescription] =
     useState('')
 
+  const [monthlyGoal, setMonthlyGoal] =
+    useState('')
+
+  const [transactionMode, setTransactionMode] =
+    useState<
+      | 'income'
+      | 'expense'
+      | 'investment_add'
+      | 'investment_remove'
+      | 'saved_add'
+      | 'saved_remove'
+    >('income')
+
   const [transactions, setTransactions] =
+    useState<any[]>([])
+
+  const [allTransactions, setAllTransactions] =
     useState<any[]>([])
 
   const [breakdownType, setBreakdownType] =
@@ -69,10 +86,6 @@ export default function Dashboard({
 
   const [showProfileModal, setShowProfileModal] =
     useState(false)
-
-  // =========================
-  // USER
-  // =========================
 
   useEffect(() => {
     async function loadUserData() {
@@ -98,10 +111,6 @@ export default function Dashboard({
 
     loadUserData()
   }, [])
-
-  // =========================
-  // AVATAR
-  // =========================
 
   async function handleAvatarChange(
     event: any
@@ -138,15 +147,11 @@ export default function Dashboard({
     }
   }
 
-  // =========================
-  // TRANSAÇÕES
-  // =========================
-
   async function loadTransactions() {
     const { data, error } =
       await getTransactions(
         userId,
-        currentMonth
+        selectedMonth
       )
 
     if (error) {
@@ -157,13 +162,24 @@ export default function Dashboard({
     setTransactions(data || [])
   }
 
+  async function loadAllTransactions() {
+    const { data, error } =
+      await getAllTransactions(
+        userId
+      )
+
+    if (error) {
+      console.log(error)
+      return
+    }
+
+    setAllTransactions(data || [])
+  }
+
   useEffect(() => {
     loadTransactions()
-  }, [])
-
-  // =========================
-  // VALOR BR
-  // =========================
+    loadAllTransactions()
+  }, [selectedMonth])
 
   function convertBrazilianValue(
     value: string
@@ -175,28 +191,49 @@ export default function Dashboard({
     )
   }
 
-  // =========================
-  // CRIAR TRANSAÇÃO
-  // =========================
-
   async function handleCreateTransaction() {
     const formattedAmount =
       convertBrazilianValue(amount)
 
-    if (!formattedAmount) {
-      alert('Digite um valor')
-      return
+    let finalType = ''
+
+    switch (transactionMode) {
+      case 'income':
+        finalType = 'income'
+        break
+
+      case 'expense':
+        finalType = 'expense'
+        break
+
+      case 'investment_add':
+        finalType =
+          'investment_add'
+        break
+
+      case 'investment_remove':
+        finalType =
+          'investment_remove'
+        break
+
+      case 'saved_add':
+        finalType = 'saved_add'
+        break
+
+      case 'saved_remove':
+        finalType =
+          'saved_remove'
+        break
     }
 
     const created =
       await createTransaction({
         user_id: userId,
-        type,
-        category:
-          category || 'Sem categoria',
+        type: finalType,
+        category,
         amount: formattedAmount,
         description,
-        month: currentMonth,
+        month: selectedMonth,
       })
 
     if (created.error) {
@@ -204,17 +241,13 @@ export default function Dashboard({
       return
     }
 
-    setAmount('')
     setCategory('')
+    setAmount('')
     setDescription('')
-    setType('income')
 
     loadTransactions()
+    loadAllTransactions()
   }
-
-  // =========================
-  // CÁLCULOS
-  // =========================
 
   const incomes = transactions
     .filter((t) => t.type === 'income')
@@ -232,90 +265,69 @@ export default function Dashboard({
       0
     )
 
-  // =========================
-  // INVESTIMENTOS
-  // =========================
-
   const investmentsAdded =
-    transactions
+    allTransactions
       .filter(
         (t) =>
           t.type ===
-          'investment'
+          'investment_add'
       )
       .reduce(
         (acc, t) =>
-          acc +
-          Number(t.amount),
+          acc + Number(t.amount),
         0
       )
 
-  const investmentsWithdraw =
-    transactions
+  const investmentsRemoved =
+    allTransactions
       .filter(
         (t) =>
           t.type ===
-          'withdraw_investment'
+          'investment_remove'
       )
       .reduce(
         (acc, t) =>
-          acc +
-          Number(t.amount),
+          acc + Number(t.amount),
+        0
+      )
+
+  const savedAdded =
+    allTransactions
+      .filter(
+        (t) =>
+          t.type === 'saved_add'
+      )
+      .reduce(
+        (acc, t) =>
+          acc + Number(t.amount),
+        0
+      )
+
+  const savedRemoved =
+    allTransactions
+      .filter(
+        (t) =>
+          t.type ===
+          'saved_remove'
+      )
+      .reduce(
+        (acc, t) =>
+          acc + Number(t.amount),
         0
       )
 
   const investments =
     investmentsAdded -
-    investmentsWithdraw
-
-  // =========================
-  // GUARDADO
-  // =========================
-
-  const savedAdded =
-    transactions
-      .filter(
-        (t) =>
-          t.type === 'saved'
-      )
-      .reduce(
-        (acc, t) =>
-          acc +
-          Number(t.amount),
-        0
-      )
-
-  const savedWithdraw =
-    transactions
-      .filter(
-        (t) =>
-          t.type ===
-          'withdraw_saved'
-      )
-      .reduce(
-        (acc, t) =>
-          acc +
-          Number(t.amount),
-        0
-      )
+    investmentsRemoved
 
   const saved =
-    savedAdded -
-    savedWithdraw
-
-  // =========================
-  // TOTAIS
-  // =========================
+    savedAdded - savedRemoved
 
   const availableBalance =
     incomes - expenses
 
   const totalWealth =
     investments + saved
-
-  // =========================
-  // DETALHAMENTO
-  // =========================
 
   function openBreakdown(
     type: string,
@@ -325,16 +337,11 @@ export default function Dashboard({
     setBreakdownTitle(title)
   }
 
-  // =========================
-  // RENDER
-  // =========================
-
   return (
     <div className="min-h-screen bg-black text-white pb-28">
 
       <div className="max-w-2xl mx-auto p-4 flex flex-col gap-4">
 
-        {/* HEADER */}
         <div className="flex justify-between items-center">
 
           <div className="flex items-center gap-3">
@@ -399,7 +406,6 @@ export default function Dashboard({
 
         </div>
 
-        {/* HOME */}
         {activeTab === 'home' && (
           <>
 
@@ -503,19 +509,14 @@ export default function Dashboard({
           </>
         )}
 
-        {/* ADICIONAR */}
         {activeTab === 'add' && (
           <div className="bg-gray-900 p-4 rounded-2xl flex flex-col gap-3">
 
-            <h2 className="text-xl font-bold">
-              Nova transação
-            </h2>
-
             <select
-              value={type}
+              value={transactionMode}
               onChange={(e) =>
-                setType(
-                  e.target.value
+                setTransactionMode(
+                  e.target.value as any
                 )
               }
               className="p-3 bg-gray-800 rounded-xl"
@@ -528,20 +529,20 @@ export default function Dashboard({
                 Despesa
               </option>
 
-              <option value="investment">
-                Investimento
+              <option value="investment_add">
+                Adicionar investimento
               </option>
 
-              <option value="withdraw_investment">
-                Retirada investimento
+              <option value="investment_remove">
+                Retirar investimento
               </option>
 
-              <option value="saved">
-                Guardado
+              <option value="saved_add">
+                Guardar dinheiro
               </option>
 
-              <option value="withdraw_saved">
-                Retirada guardado
+              <option value="saved_remove">
+                Retirar guardado
               </option>
 
             </select>
@@ -585,21 +586,65 @@ export default function Dashboard({
               }
               className="bg-green-500 p-3 rounded-xl font-bold"
             >
-              Adicionar Transação
+              Salvar movimentação
             </button>
+
+          </div>
+        )}
+
+        {activeTab === 'profile' && (
+          <div className="bg-gray-900 border border-gray-700 p-4 rounded-2xl flex flex-col gap-4">
+
+            <div>
+
+              <p className="text-sm mb-2">
+                Selecione o mês
+              </p>
+
+              <input
+                type="month"
+                value={
+                  selectedMonth
+                }
+                onChange={(e) =>
+                  setSelectedMonth(
+                    e.target.value
+                  )
+                }
+                className="w-full p-3 bg-gray-800 rounded-xl"
+              />
+
+            </div>
+
+            <div>
+
+              <p className="text-sm mb-2">
+                Meta mensal
+              </p>
+
+              <input
+                className="w-full p-3 bg-gray-800 rounded-xl"
+                placeholder="Ex: 2000"
+                value={monthlyGoal}
+                onChange={(e) =>
+                  setMonthlyGoal(
+                    e.target.value
+                  )
+                }
+              />
+
+            </div>
 
           </div>
         )}
 
       </div>
 
-      {/* BOTTOM NAV */}
       <BottomNav
         active={activeTab}
         onChange={setActiveTab}
       />
 
-      {/* MODAL DETALHAMENTO */}
       {breakdownType && (
         <FinancialBreakdown
           title={breakdownTitle}
@@ -611,7 +656,6 @@ export default function Dashboard({
         />
       )}
 
-      {/* MODAL PERFIL */}
       {showProfileModal && (
         <ProfileModal
           currentName={userName}

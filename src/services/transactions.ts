@@ -51,12 +51,3 @@ export async function deleteTransaction(
     .delete()
     .eq('id', id)
 }
-
-export async function getMonthlySummary(
-  userId: string
-) {
-  return await supabase
-    .from('transactions')
-    .select('month, type, amount')
-    .eq('user_id', userId)
-}

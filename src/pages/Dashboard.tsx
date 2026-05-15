@@ -30,6 +30,8 @@ import WealthEvolutionChart from '../components/WealthEvolutionChart'
 
 import GoalProgress from '../components/GoalProgress'
 
+import MonthlyFlowCard from '../components/MonthlyFlowCard'
+
 type Props = {
   userId: string
   onLogout: () => void
@@ -91,6 +93,10 @@ export default function Dashboard({
   const [showProfileModal, setShowProfileModal] =
     useState(false)
 
+  // =========================
+  // USER
+  // =========================
+
   useEffect(() => {
     async function loadUserData() {
       const {
@@ -115,6 +121,10 @@ export default function Dashboard({
 
     loadUserData()
   }, [])
+
+  // =========================
+  // AVATAR
+  // =========================
 
   async function handleAvatarChange(
     event: any
@@ -151,6 +161,10 @@ export default function Dashboard({
     }
   }
 
+  // =========================
+  // TRANSAÇÕES
+  // =========================
+
   async function loadTransactions() {
     const { data, error } =
       await getTransactions(
@@ -185,6 +199,10 @@ export default function Dashboard({
     loadAllTransactions()
   }, [selectedMonth])
 
+  // =========================
+  // FORMATADOR BR
+  // =========================
+
   function convertBrazilianValue(
     value: string
   ) {
@@ -195,63 +213,9 @@ export default function Dashboard({
     )
   }
 
-  async function handleCreateTransaction() {
-    const formattedAmount =
-      convertBrazilianValue(amount)
-
-    let finalType = ''
-
-    switch (transactionMode) {
-      case 'income':
-        finalType = 'income'
-        break
-
-      case 'expense':
-        finalType = 'expense'
-        break
-
-      case 'investment_add':
-        finalType =
-          'investment_add'
-        break
-
-      case 'investment_remove':
-        finalType =
-          'investment_remove'
-        break
-
-      case 'saved_add':
-        finalType = 'saved_add'
-        break
-
-      case 'saved_remove':
-        finalType =
-          'saved_remove'
-        break
-    }
-
-    const created =
-      await createTransaction({
-        user_id: userId,
-        type: finalType,
-        category,
-        amount: formattedAmount,
-        description,
-        month: selectedMonth,
-      })
-
-    if (created.error) {
-      alert(created.error.message)
-      return
-    }
-
-    setCategory('')
-    setAmount('')
-    setDescription('')
-
-    loadTransactions()
-    loadAllTransactions()
-  }
+  // =========================
+  // CÁLCULOS
+  // =========================
 
   const incomes = transactions
     .filter((t) => t.type === 'income')
@@ -342,6 +306,146 @@ export default function Dashboard({
   const totalWealth =
     investments + saved
 
+  // =========================
+  // CRIAR TRANSAÇÃO
+  // =========================
+
+  async function handleCreateTransaction() {
+    const formattedAmount =
+      convertBrazilianValue(amount)
+
+    if (
+      !formattedAmount ||
+      formattedAmount <= 0
+    ) {
+      alert(
+        'Informe um valor válido'
+      )
+      return
+    }
+
+    // =========================
+    // VALIDAÇÕES
+    // =========================
+
+    if (
+      transactionMode ===
+        'expense' &&
+      formattedAmount >
+        availableBalance
+    ) {
+      alert(
+        'Saldo insuficiente para despesa'
+      )
+      return
+    }
+
+    if (
+      transactionMode ===
+        'investment_add' &&
+      formattedAmount >
+        availableBalance
+    ) {
+      alert(
+        'Saldo insuficiente para investir'
+      )
+      return
+    }
+
+    if (
+      transactionMode ===
+        'saved_add' &&
+      formattedAmount >
+        availableBalance
+    ) {
+      alert(
+        'Saldo insuficiente para guardar'
+      )
+      return
+    }
+
+    if (
+      transactionMode ===
+        'investment_remove' &&
+      formattedAmount >
+        investments
+    ) {
+      alert(
+        'Você não possui esse valor investido'
+      )
+      return
+    }
+
+    if (
+      transactionMode ===
+        'saved_remove' &&
+      formattedAmount >
+        saved
+    ) {
+      alert(
+        'Você não possui esse valor guardado'
+      )
+      return
+    }
+
+    let finalType = ''
+
+    switch (transactionMode) {
+      case 'income':
+        finalType = 'income'
+        break
+
+      case 'expense':
+        finalType = 'expense'
+        break
+
+      case 'investment_add':
+        finalType =
+          'investment_add'
+        break
+
+      case 'investment_remove':
+        finalType =
+          'investment_remove'
+        break
+
+      case 'saved_add':
+        finalType = 'saved_add'
+        break
+
+      case 'saved_remove':
+        finalType =
+          'saved_remove'
+        break
+    }
+
+    const created =
+      await createTransaction({
+        user_id: userId,
+        type: finalType,
+        category,
+        amount: formattedAmount,
+        description,
+        month: selectedMonth,
+      })
+
+    if (created.error) {
+      alert(created.error.message)
+      return
+    }
+
+    setCategory('')
+    setAmount('')
+    setDescription('')
+
+    loadTransactions()
+    loadAllTransactions()
+  }
+
+  // =========================
+  // MODAL DETALHAMENTO
+  // =========================
+
   function openBreakdown(
     type: string,
     title: string
@@ -349,6 +453,10 @@ export default function Dashboard({
     setBreakdownType(type)
     setBreakdownTitle(title)
   }
+
+  // =========================
+  // RENDER
+  // =========================
 
   return (
     <div className="min-h-screen bg-black text-white pb-28">
@@ -458,6 +566,15 @@ export default function Dashboard({
               goal={
                 Number(monthlyGoal) || 0
               }
+            />
+
+            <MonthlyFlowCard
+              incomes={incomes}
+              expenses={expenses}
+              investmentsAdded={
+                investmentsAdded
+              }
+              savedAdded={savedAdded}
             />
 
             <div className="grid grid-cols-2 gap-2">

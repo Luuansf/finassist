@@ -26,6 +26,8 @@ import BottomNav from '../components/BottomNav'
 
 import PremiumBalanceCard from '../components/PremiumBalanceCard'
 
+import WealthEvolutionChart from '../components/WealthEvolutionChart'
+
 type Props = {
   userId: string
   onLogout: () => void
@@ -342,6 +344,7 @@ export default function Dashboard({
 
       <div className="max-w-2xl mx-auto p-4 flex flex-col gap-4">
 
+        {/* HEADER */}
         <div className="flex justify-between items-center">
 
           <div className="flex items-center gap-3">
@@ -406,6 +409,7 @@ export default function Dashboard({
 
         </div>
 
+        {/* HOME */}
         {activeTab === 'home' && (
           <>
 
@@ -432,6 +436,10 @@ export default function Dashboard({
               expenses={expenses}
               investments={investments}
               saved={saved}
+            />
+
+            <WealthEvolutionChart
+              transactions={allTransactions}
             />
 
             <div className="grid grid-cols-2 gap-2">
@@ -509,6 +517,7 @@ export default function Dashboard({
           </>
         )}
 
+        {/* ADICIONAR */}
         {activeTab === 'add' && (
           <div className="bg-gray-900 p-4 rounded-2xl flex flex-col gap-3">
 
@@ -592,6 +601,7 @@ export default function Dashboard({
           </div>
         )}
 
+        {/* PROFILE */}
         {activeTab === 'profile' && (
           <div className="bg-gray-900 border border-gray-700 p-4 rounded-2xl flex flex-col gap-4">
 

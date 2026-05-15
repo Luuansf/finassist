@@ -28,6 +28,8 @@ import PremiumBalanceCard from '../components/PremiumBalanceCard'
 
 import WealthEvolutionChart from '../components/WealthEvolutionChart'
 
+import GoalProgress from '../components/GoalProgress'
+
 type Props = {
   userId: string
   onLogout: () => void
@@ -442,6 +444,13 @@ export default function Dashboard({
               transactions={allTransactions}
             />
 
+            <GoalProgress
+              current={totalWealth}
+              goal={
+                Number(monthlyGoal) || 0
+              }
+            />
+
             <div className="grid grid-cols-2 gap-2">
 
               <div
@@ -629,12 +638,12 @@ export default function Dashboard({
             <div>
 
               <p className="text-sm mb-2">
-                Meta mensal
+                Meta patrimonial
               </p>
 
               <input
                 className="w-full p-3 bg-gray-800 rounded-xl"
-                placeholder="Ex: 2000"
+                placeholder="Ex: 100000"
                 value={monthlyGoal}
                 onChange={(e) =>
                   setMonthlyGoal(

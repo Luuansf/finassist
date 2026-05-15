@@ -32,6 +32,8 @@ import GoalProgress from '../components/GoalProgress'
 
 import MonthlyFlowCard from '../components/MonthlyFlowCard'
 
+import TransactionHistoryCard from '../components/TransactionHistoryCard'
+
 type Props = {
   userId: string
   onLogout: () => void
@@ -296,18 +298,18 @@ export default function Dashboard({
   )
 
   const rawAvailableBalance =
-  incomes -
-  expenses -
-  investmentsAdded -
-  savedAdded +
-  investmentsRemoved +
-  savedRemoved
+    incomes -
+    expenses -
+    investmentsAdded -
+    savedAdded +
+    investmentsRemoved +
+    savedRemoved
 
-const availableBalance =
-  Math.max(
-    rawAvailableBalance,
-    0
-  )
+  const availableBalance =
+    Math.max(
+      rawAvailableBalance,
+      0
+    )
 
   const totalWealth =
     investments + saved
@@ -744,45 +746,74 @@ const availableBalance =
 
         {/* PROFILE */}
         {activeTab === 'profile' && (
-          <div className="bg-gray-900 border border-gray-700 p-4 rounded-2xl flex flex-col gap-4">
+          <div className="flex flex-col gap-4">
 
-            <div>
+            <div className="bg-gray-900 border border-gray-700 p-4 rounded-2xl flex flex-col gap-4">
 
-              <p className="text-sm mb-2">
-                Selecione o mês
-              </p>
+              <div>
 
-              <input
-                type="month"
-                value={
-                  selectedMonth
-                }
-                onChange={(e) =>
-                  setSelectedMonth(
-                    e.target.value
-                  )
-                }
-                className="w-full p-3 bg-gray-800 rounded-xl"
-              />
+                <p className="text-sm mb-2">
+                  Selecione o mês
+                </p>
+
+                <input
+                  type="month"
+                  value={
+                    selectedMonth
+                  }
+                  onChange={(e) =>
+                    setSelectedMonth(
+                      e.target.value
+                    )
+                  }
+                  className="w-full p-3 bg-gray-800 rounded-xl"
+                />
+
+              </div>
+
+              <div>
+
+                <p className="text-sm mb-2">
+                  Meta patrimonial
+                </p>
+
+                <input
+                  className="w-full p-3 bg-gray-800 rounded-xl"
+                  placeholder="Ex: 100000"
+                  value={monthlyGoal}
+                  onChange={(e) =>
+                    setMonthlyGoal(
+                      e.target.value
+                    )
+                  }
+                />
+
+              </div>
 
             </div>
 
-            <div>
+            <div className="flex flex-col gap-3">
 
-              <p className="text-sm mb-2">
-                Meta patrimonial
-              </p>
+              <h2 className="text-xl font-bold">
+                Histórico financeiro
+              </h2>
 
-              <input
-                className="w-full p-3 bg-gray-800 rounded-xl"
-                placeholder="Ex: 100000"
-                value={monthlyGoal}
-                onChange={(e) =>
-                  setMonthlyGoal(
-                    e.target.value
-                  )
-                }
-              />
+              {transactions.length === 0 && (
+                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 text-center text-gray-400">
+                  Nenhuma movimentação neste mês
+                </div>
+              )}
+
+              {transactions.map(
+                (transaction) => (
+                  <TransactionHistoryCard
+                    key={transaction.id}
+                    transaction={
+                      transaction
+                    }
+                  />
+                )
+              )}
 
             </div>
 

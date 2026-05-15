@@ -36,6 +36,8 @@ import TransactionHistoryCard from '../components/TransactionHistoryCard'
 
 import ExpenseAnalytics from '../components/ExpenseAnalytics'
 
+import FinancialGoalCard from '../components/FinancialGoalCard'
+
 type Props = {
   userId: string
   onLogout: () => void
@@ -64,6 +66,12 @@ export default function Dashboard({
     useState('')
 
   const [monthlyGoal, setMonthlyGoal] =
+    useState('')
+
+  const [goalTitle, setGoalTitle] =
+    useState('Minha meta')
+
+  const [goalTarget, setGoalTarget] =
     useState('')
 
   const [transactionMode, setTransactionMode] =
@@ -578,6 +586,12 @@ export default function Dashboard({
               }
             />
 
+            <FinancialGoalCard
+              title={goalTitle}
+              current={totalWealth}
+              target={Number(goalTarget)}
+            />
+
             <MonthlyFlowCard
               incomes={incomes}
               expenses={expenses}
@@ -789,6 +803,44 @@ export default function Dashboard({
                   value={monthlyGoal}
                   onChange={(e) =>
                     setMonthlyGoal(
+                      e.target.value
+                    )
+                  }
+                />
+
+              </div>
+
+              <div>
+
+                <p className="text-sm mb-2">
+                  Nome da meta
+                </p>
+
+                <input
+                  className="w-full p-3 bg-gray-800 rounded-xl"
+                  placeholder="Ex: Comprar carro"
+                  value={goalTitle}
+                  onChange={(e) =>
+                    setGoalTitle(
+                      e.target.value
+                    )
+                  }
+                />
+
+              </div>
+
+              <div>
+
+                <p className="text-sm mb-2">
+                  Valor da meta
+                </p>
+
+                <input
+                  className="w-full p-3 bg-gray-800 rounded-xl"
+                  placeholder="Ex: 50000"
+                  value={goalTarget}
+                  onChange={(e) =>
+                    setGoalTarget(
                       e.target.value
                     )
                   }

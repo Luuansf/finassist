@@ -295,13 +295,19 @@ export default function Dashboard({
     0
   )
 
-  const availableBalance =
-    incomes -
-    expenses -
-    investmentsAdded -
-    savedAdded +
-    investmentsRemoved +
-    savedRemoved
+  const rawAvailableBalance =
+  incomes -
+  expenses -
+  investmentsAdded -
+  savedAdded +
+  investmentsRemoved +
+  savedRemoved
+
+const availableBalance =
+  Math.max(
+    rawAvailableBalance,
+    0
+  )
 
   const totalWealth =
     investments + saved

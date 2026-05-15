@@ -320,12 +320,16 @@ export default function Dashboard({
         0
       )
 
-  const investments =
+  const investments = Math.max(
     investmentsAdded -
-    investmentsRemoved
+      investmentsRemoved,
+    0
+  )
 
-  const saved =
-    savedAdded - savedRemoved
+  const saved = Math.max(
+    savedAdded - savedRemoved,
+    0
+  )
 
   const availableBalance =
     incomes -

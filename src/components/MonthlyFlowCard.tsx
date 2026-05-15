@@ -10,16 +10,15 @@ type Props = {
 export default function MonthlyFlowCard({
   incomes,
   expenses,
-  investmentsAdded,
-  savedAdded,
 }: Props) {
-  const totalOut =
-    expenses +
-    investmentsAdded +
-    savedAdded
+  // =========================
+  // FLUXO REAL DO MÊS
+  // =========================
+
+  const totalOut = expenses
 
   const remaining =
-    incomes - totalOut
+    incomes - expenses
 
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
@@ -41,6 +40,7 @@ export default function MonthlyFlowCard({
       <div className="flex flex-col gap-3">
 
         <div className="flex justify-between">
+
           <span className="text-gray-400">
             Recebido
           </span>
@@ -48,16 +48,19 @@ export default function MonthlyFlowCard({
           <span className="text-green-400 font-bold">
             {formatCurrency(incomes)}
           </span>
+
         </div>
 
         <div className="flex justify-between">
+
           <span className="text-gray-400">
-            Saiu da conta
+            Gasto no mês
           </span>
 
           <span className="text-red-400 font-bold">
             {formatCurrency(totalOut)}
           </span>
+
         </div>
 
         <div className="border-t border-gray-800 pt-3 flex justify-between">

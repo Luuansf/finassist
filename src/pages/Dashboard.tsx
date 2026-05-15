@@ -34,6 +34,8 @@ import MonthlyFlowCard from '../components/MonthlyFlowCard'
 
 import TransactionHistoryCard from '../components/TransactionHistoryCard'
 
+import ExpenseAnalytics from '../components/ExpenseAnalytics'
+
 type Props = {
   userId: string
   onLogout: () => void
@@ -583,6 +585,10 @@ export default function Dashboard({
                 investmentsAdded
               }
               savedAdded={savedAdded}
+            />
+
+            <ExpenseAnalytics
+              transactions={transactions}
             />
 
             <div className="grid grid-cols-2 gap-2">

@@ -4,6 +4,7 @@ import {
   createTransaction,
   getTransactions,
   getAllTransactions,
+  deleteTransaction,
 } from '../services/transactions'
 
 import { uploadAvatar } from '../services/profile'
@@ -543,6 +544,34 @@ export default function Dashboard({
   }
 
   // =========================
+  // DELETAR TRANSAÇÃO
+  // =========================
+
+  async function handleDeleteTransaction(
+    id: string
+  ) {
+    const confirmDelete =
+      confirm(
+        'Deseja excluir esta movimentação?'
+      )
+
+    if (!confirmDelete) return
+
+    const result =
+      await deleteTransaction(id)
+
+    if (result.error) {
+      alert(
+        result.error.message
+      )
+      return
+    }
+
+    loadTransactions()
+    loadAllTransactions()
+  }
+
+  // =========================
   // MODAL DETALHAMENTO
   // =========================
 
@@ -772,7 +801,7 @@ export default function Dashboard({
           </>
         )}
 
-        {/* ADICIONAR */}
+        {/* ADD */}
         {activeTab === 'add' && (
           <div className="bg-gray-900 p-4 rounded-2xl flex flex-col gap-3">
 
@@ -978,6 +1007,9 @@ export default function Dashboard({
                     key={transaction.id}
                     transaction={
                       transaction
+                    }
+                    onDelete={
+                      handleDeleteTransaction
                     }
                   />
                 )

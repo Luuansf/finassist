@@ -38,6 +38,8 @@ import ExpenseAnalytics from '../components/ExpenseAnalytics'
 
 import FinancialGoalCard from '../components/FinancialGoalCard'
 
+import SmartAlerts from '../components/SmartAlerts'
+
 type Props = {
   userId: string
   onLogout: () => void
@@ -603,6 +605,16 @@ export default function Dashboard({
 
             <ExpenseAnalytics
               transactions={transactions}
+            />
+
+            <SmartAlerts
+              incomes={incomes}
+              expenses={expenses}
+              availableBalance={
+                availableBalance
+              }
+              investments={investments}
+              saved={saved}
             />
 
             <div className="grid grid-cols-2 gap-2">

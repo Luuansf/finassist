@@ -328,7 +328,12 @@ export default function Dashboard({
     savedAdded - savedRemoved
 
   const availableBalance =
-    incomes - expenses
+    incomes -
+    expenses -
+    investmentsAdded -
+    savedAdded +
+    investmentsRemoved +
+    savedRemoved
 
   const totalWealth =
     investments + saved
@@ -420,7 +425,7 @@ export default function Dashboard({
               amount={formatCurrency(
                 availableBalance
               )}
-              subtitle="Valor livre no mês atual"
+              subtitle="Valor livre para uso"
               gradient="bg-gradient-to-br from-green-500 to-emerald-700"
             />
 
@@ -429,7 +434,7 @@ export default function Dashboard({
               amount={formatCurrency(
                 totalWealth
               )}
-              subtitle="Investimentos + valores guardados"
+              subtitle="Investimentos + guardado"
               gradient="bg-gradient-to-br from-indigo-500 to-purple-700"
             />
 

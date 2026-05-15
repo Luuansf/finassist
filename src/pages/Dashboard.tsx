@@ -76,6 +76,9 @@ export default function Dashboard({
   const [goalTarget, setGoalTarget] =
     useState('')
 
+  const [recurring, setRecurring] =
+    useState(false)
+
   const [transactionMode, setTransactionMode] =
     useState<
       | 'income'
@@ -191,7 +194,82 @@ export default function Dashboard({
       return
     }
 
-    setTransactions(data || [])
+    // =========================
+    // RECORRÊNCIA
+    // =========================
+
+    const recurringTransactions =
+      (data || []).filter(
+        (t) => t.recurring
+      )
+
+    const previousMonth =
+      new Date(selectedMonth + '-01')
+
+    previousMonth.setMonth(
+      previousMonth.getMonth() - 1
+    )
+
+    const previousMonthString =
+      previousMonth
+        .toISOString()
+        .slice(0, 7)
+
+    const {
+      data: oldTransactions,
+    } =
+      await getTransactions(
+        userId,
+        previousMonthString
+      )
+
+    const recurringOld =
+      (
+        oldTransactions || []
+      ).filter(
+        (t) => t.recurring
+      )
+
+    for (const transaction of recurringOld) {
+      const exists =
+        recurringTransactions.find(
+          (current) =>
+            current.category ===
+              transaction.category &&
+            current.amount ===
+              transaction.amount &&
+            current.type ===
+              transaction.type
+        )
+
+      if (!exists) {
+        await createTransaction({
+          user_id: userId,
+          type: transaction.type,
+          category:
+            transaction.category,
+          amount:
+            transaction.amount,
+          description:
+            transaction.description,
+          month: selectedMonth,
+          recurring: true,
+        })
+      }
+    }
+
+    // RECARREGA
+    const {
+      data: updatedData,
+    } =
+      await getTransactions(
+        userId,
+        selectedMonth
+      )
+
+    setTransactions(
+      updatedData || []
+    )
   }
 
   async function loadAllTransactions() {
@@ -447,6 +525,7 @@ export default function Dashboard({
         amount: formattedAmount,
         description,
         month: selectedMonth,
+        recurring,
       })
 
     if (created.error) {
@@ -457,6 +536,7 @@ export default function Dashboard({
     setCategory('')
     setAmount('')
     setDescription('')
+    setRecurring(false)
 
     loadTransactions()
     loadAllTransactions()
@@ -763,6 +843,24 @@ export default function Dashboard({
               }
               className="p-3 bg-gray-800 rounded-xl"
             />
+
+            <label className="flex items-center gap-3 bg-gray-800 p-3 rounded-xl">
+
+              <input
+                type="checkbox"
+                checked={recurring}
+                onChange={(e) =>
+                  setRecurring(
+                    e.target.checked
+                  )
+                }
+              />
+
+              <span>
+                Repetir automaticamente todo mês
+              </span>
+
+            </label>
 
             <button
               onClick={

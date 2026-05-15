@@ -7,6 +7,7 @@ type CreateTransactionProps = {
   amount: number
   description: string
   month: string
+  recurring?: boolean
 }
 
 export async function createTransaction(

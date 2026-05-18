@@ -1,43 +1,58 @@
-import { Routes, Route } from 'react-router-dom'
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom'
 
-import Login from '../pages/Login'
 import Dashboard from '../pages/Dashboard'
 
-import ProtectedRoute from '../components/ProtectedRoute'
+import Login from '../pages/Login'
+
+import ProtectedRoute from './ProtectedRoute.tsx'
 
 type Props = {
   user: any
-  handleLogout: () => void
+  setUser: (user: any) => void
 }
 
 export default function AppRoutes({
   user,
-  handleLogout,
+  setUser,
 }: Props) {
   return (
-    <Routes>
+    <BrowserRouter>
 
-      <Route
-        path="/"
-        element={
-          <Login onLogin={() => {}} />
-        }
-      />
+      <Routes>
 
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute user={user}>
+        <Route
+          path="/"
+          element={
+            user ? (
+              <Navigate to="/dashboard" />
+            ) : (
+              <Login
+                onLogin={setUser}
+              />
+            )
+          }
+        />
 
-            <Dashboard
-              userId={user?.id}
-              onLogout={handleLogout}
-            />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute
+              user={user}
+            >
+              <Dashboard
+                user={user}
+              />
+            </ProtectedRoute>
+          }
+        />
 
-          </ProtectedRoute>
-        }
-      />
+      </Routes>
 
-    </Routes>
+    </BrowserRouter>
   )
 }

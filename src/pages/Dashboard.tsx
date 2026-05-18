@@ -1,460 +1,214 @@
 import { useEffect, useState } from 'react'
 
-import {
-  createTransaction,
-  getTransactions,
-  getAllTransactions,
-  deleteTransaction,
-  updateTransaction,
-} from '../services/transactions'
+import { supabase } from '../services/supabase'
 
-import {
-  uploadAvatar,
-} from '../services/profile'
+import { formatCurrency } from '../utils/formatCurrency'
 
-import {
-  supabase,
-} from '../services/supabase'
+import PremiumBalanceCard from '../components/PremiumBalanceCard'
 
 import SummaryCard from '../components/SummaryCard'
 
-import FinancialInsights from '../components/FinancialInsights'
-
-import FinancialBreakdown from '../components/FinancialBreakdown'
-
-import ProfileModal from '../components/ProfileModal'
-
-import BottomNav from '../components/BottomNav'
-
-import PremiumBalanceCard from '../components/PremiumBalanceCard'
+import MonthlyFlowCard from '../components/MonthlyFlowCard'
 
 import WealthEvolutionChart from '../components/WealthEvolutionChart'
 
 import GoalProgress from '../components/GoalProgress'
 
-import MonthlyFlowCard from '../components/MonthlyFlowCard'
-
-import TransactionHistoryCard from '../components/TransactionHistoryCard'
-
-import ExpenseAnalytics from '../components/ExpenseAnalytics'
-
-import FinancialGoalCard from '../components/FinancialGoalCard'
-
 import SmartAlerts from '../components/SmartAlerts'
+
+import BottomNav from '../components/BottomNav'
+
+import ProfileModal from '../components/ProfileModal'
+
+import FinancialBreakdown from '../components/FinancialBreakdown'
 
 import EditTransactionModal from '../components/EditTransactionModal'
 
 type Props = {
-  userId: string
-  onLogout: () => void
+  user: any
 }
 
 export default function Dashboard({
-  userId,
-  onLogout,
+  user,
 }: Props) {
-  const currentMonth =
-    new Date().toISOString().slice(0, 7)
+  const [transactions, setTransactions] =
+    useState<any[]>([])
 
-  const [selectedMonth, setSelectedMonth] =
-    useState(currentMonth)
-
-  const [activeTab, setActiveTab] =
-    useState('home')
-
-  const [category, setCategory] =
+  const [description, setDescription] =
     useState('')
 
   const [amount, setAmount] =
     useState('')
 
-  const [description, setDescription] =
+  const [type, setType] =
+    useState('income')
+
+  const [category, setCategory] =
     useState('')
 
-  const [monthlyGoal] =
-    useState('5000')
-
-  const [goalTitle] =
-    useState('Reserva financeira')
-
-  const [goalTarget] =
-    useState('10000')
-
-  const [recurring, setRecurring] =
-    useState(false)
-
-  const [isInstallment, setIsInstallment] =
-    useState(false)
-
-  const [installments, setInstallments] =
-    useState('2')
-
-  const [transactionMode, setTransactionMode] =
-    useState<
-      | 'income'
-      | 'expense'
-      | 'investment_add'
-      | 'investment_remove'
-      | 'saved_add'
-      | 'saved_remove'
-    >('income')
-
-  const [transactions, setTransactions] =
-    useState<any[]>([])
-
-  const [allTransactions, setAllTransactions] =
-    useState<any[]>([])
-
-  const [breakdownType, setBreakdownType] =
-    useState('expense')
-
-  const [breakdownTitle, setBreakdownTitle] =
-    useState('Despesas')
-
-  const [userName, setUserName] =
-    useState('Usuário')
-
-  const [avatar, setAvatar] =
-    useState<string | null>(null)
+  const [activeTab, setActiveTab] =
+    useState('home')
 
   const [showProfileModal, setShowProfileModal] =
     useState(false)
 
+  const [showBreakdown, setShowBreakdown] =
+    useState(false)
+
+  const [breakdownType, setBreakdownType] =
+    useState('')
+
+  const [breakdownTitle, setBreakdownTitle] =
+    useState('')
+
   const [editingTransaction, setEditingTransaction] =
     useState<any | null>(null)
 
+  const [monthlyGoal] =
+    useState(5000)
+
+  const [userName, setUserName] =
+    useState('Usuário')
+
   useEffect(() => {
-    async function loadUserData() {
-      const {
-        data: { user },
-      } =
-        await supabase.auth.getUser()
+    loadTransactions()
 
-      if (user?.user_metadata?.name) {
-        setUserName(
-          user.user_metadata.name
-        )
-      }
+    const name =
+      user?.user_metadata?.name
 
-      if (
-        user?.user_metadata?.avatar
-      ) {
-        setAvatar(
-          user.user_metadata.avatar
-        )
-      }
+    if (name) {
+      setUserName(name)
     }
-
-    loadUserData()
   }, [])
 
-  async function handleAvatarChange(
-    event: any
-  ) {
-    const file =
-      event.target.files[0]
-
-    if (!file) return
-
-    const result =
-      await uploadAvatar(
-        file,
-        userId
-      )
-
-    if (result.error) {
-      alert(
-        result.error.message
-      )
-      return
-    }
-
-    if (result.publicUrl) {
-      setAvatar(
-        result.publicUrl
-      )
-
-      await supabase.auth.updateUser({
-        data: {
-          avatar:
-            result.publicUrl,
-        },
-      })
-    }
-  }
-
   async function loadTransactions() {
-    const { data, error } =
-      await getTransactions(
-        userId,
-        selectedMonth
-      )
+    const { data } =
+      await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', {
+          ascending: false,
+        })
 
-    if (error) {
-      console.log(error)
-      return
+    if (data) {
+      setTransactions(data)
     }
-
-    setTransactions(data || [])
   }
-
-  async function loadAllTransactions() {
-    const { data, error } =
-      await getAllTransactions(
-        userId
-      )
-
-    if (error) {
-      console.log(error)
-      return
-    }
-
-    setAllTransactions(data || [])
-  }
-
-  useEffect(() => {
-    loadTransactions()
-    loadAllTransactions()
-  }, [selectedMonth])
-
-  function convertBrazilianValue(
-    value: string
-  ) {
-    return Number(
-      value
-        .replace(/\./g, '')
-        .replace(',', '.')
-    )
-  }
-
-  function addMonths(
-    month: string,
-    amount: number
-  ) {
-    const [year, mon] =
-      month.split('-').map(Number)
-
-    const date = new Date(
-      year,
-      mon - 1 + amount
-    )
-
-    return `${date.getFullYear()}-${String(
-      date.getMonth() + 1
-    ).padStart(2, '0')}`
-  }
-
-  const incomes = transactions
-    .filter((t) => t.type === 'income')
-    .reduce(
-      (acc, t) =>
-        acc + Number(t.amount),
-      0
-    )
-
-  const expenses = transactions
-    .filter((t) => t.type === 'expense')
-    .reduce(
-      (acc, t) =>
-        acc + Number(t.amount),
-      0
-    )
-
-  const investmentsAdded =
-    allTransactions
-      .filter(
-        (t) =>
-          t.type ===
-          'investment_add'
-      )
-      .reduce(
-        (acc, t) =>
-          acc + Number(t.amount),
-        0
-      )
-
-  const investmentsRemoved =
-    allTransactions
-      .filter(
-        (t) =>
-          t.type ===
-          'investment_remove'
-      )
-      .reduce(
-        (acc, t) =>
-          acc + Number(t.amount),
-        0
-      )
-
-  const savedAdded =
-    allTransactions
-      .filter(
-        (t) =>
-          t.type === 'saved_add'
-      )
-      .reduce(
-        (acc, t) =>
-          acc + Number(t.amount),
-        0
-      )
-
-  const savedRemoved =
-    allTransactions
-      .filter(
-        (t) =>
-          t.type ===
-          'saved_remove'
-      )
-      .reduce(
-        (acc, t) =>
-          acc + Number(t.amount),
-        0
-      )
-
-  const investments = Math.max(
-    investmentsAdded -
-      investmentsRemoved,
-    0
-  )
-
-  const saved = Math.max(
-    savedAdded - savedRemoved,
-    0
-  )
-
-  const rawAvailableBalance =
-    incomes -
-    expenses -
-    investmentsAdded -
-    savedAdded +
-    investmentsRemoved +
-    savedRemoved
-
-  const availableBalance =
-    Math.max(
-      rawAvailableBalance,
-      0
-    )
-
-  const totalWealth =
-    investments + saved
 
   async function handleCreateTransaction() {
-    const formattedAmount =
-      convertBrazilianValue(amount)
-
     if (
-      !formattedAmount ||
-      formattedAmount <= 0
+      !description ||
+      !amount ||
+      !category
     ) {
-      alert(
-        'Informe um valor válido'
-      )
       return
     }
 
-    if (
-      transactionMode ===
-        'expense' &&
-      formattedAmount >
-        availableBalance
-    ) {
-      alert(
-        'Saldo insuficiente'
-      )
+    const value =
+      Number(amount)
+
+    if (value <= 0) {
       return
     }
 
-    const totalInstallments =
-      Number(installments)
-
-    const installmentGroup =
-      crypto.randomUUID()
-
-    if (
-      isInstallment &&
-      transactionMode ===
-        'expense'
-    ) {
-      const installmentValue =
-        formattedAmount /
-        totalInstallments
-
-      for (
-        let i = 0;
-        i < totalInstallments;
-        i++
-      ) {
-        await createTransaction({
-          user_id: userId,
-          type: 'expense',
-          category,
-          amount:
-            Number(
-              installmentValue.toFixed(
-                2
-              )
-            ),
+    const {
+      data,
+      error,
+    } = await supabase
+      .from('transactions')
+      .insert([
+        {
+          user_id: user.id,
           description,
-          month: addMonths(
-            selectedMonth,
-            i
-          ),
-          recurring: false,
-          installment_number:
-            i + 1,
-          installment_total:
-            totalInstallments,
-          installment_group:
-            installmentGroup,
-        } as any)
-      }
-    } else {
-      await createTransaction({
-        user_id: userId,
-        type: transactionMode,
-        category,
-        amount: formattedAmount,
-        description,
-        month: selectedMonth,
-        recurring,
-      } as any)
+          amount: value,
+          type,
+          category,
+        },
+      ])
+      .select()
+
+    if (error) {
+      alert(error.message)
+      return
     }
 
-    setCategory('')
-    setAmount('')
-    setDescription('')
-    setRecurring(false)
-    setIsInstallment(false)
-    setInstallments('2')
+    if (data) {
+      setTransactions([
+        data[0],
+        ...transactions,
+      ])
+    }
 
-    loadTransactions()
-    loadAllTransactions()
+    setDescription('')
+    setAmount('')
+    setCategory('')
   }
 
   async function handleDeleteTransaction(
     id: string
   ) {
-    await deleteTransaction(id)
+    const confirmDelete =
+      confirm(
+        'Deseja excluir esta transação?'
+      )
 
-    loadTransactions()
-    loadAllTransactions()
+    if (!confirmDelete) {
+      return
+    }
+
+    await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', id)
+
+    setTransactions(
+      transactions.filter(
+        (item) =>
+          item.id !== id
+      )
+    )
   }
 
   async function handleUpdateTransaction(
-    data: any
+    updatedTransaction: any
   ) {
-    if (!editingTransaction) return
+    const { error } =
+      await supabase
+        .from('transactions')
+        .update({
+          description:
+            updatedTransaction.description,
 
-    await updateTransaction(
-      editingTransaction.id,
-      data
+          amount:
+            updatedTransaction.amount,
+
+          category:
+            updatedTransaction.category,
+
+          type:
+            updatedTransaction.type,
+        })
+        .eq(
+          'id',
+          updatedTransaction.id
+        )
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    setTransactions((old) =>
+      old.map((item) =>
+        item.id ===
+        updatedTransaction.id
+          ? updatedTransaction
+          : item
+      )
     )
 
     setEditingTransaction(null)
-
-    loadTransactions()
-    loadAllTransactions()
   }
 
   function openBreakdown(
@@ -462,47 +216,108 @@ export default function Dashboard({
     title: string
   ) {
     setBreakdownType(type)
+
     setBreakdownTitle(title)
+
+    setShowBreakdown(true)
   }
+
+  const incomes =
+    transactions
+      .filter(
+        (item) =>
+          item.type ===
+          'income'
+      )
+      .reduce(
+        (acc, item) =>
+          acc + item.amount,
+        0
+      )
+
+  const expenses =
+    transactions
+      .filter(
+        (item) =>
+          item.type ===
+          'expense'
+      )
+      .reduce(
+        (acc, item) =>
+          acc + item.amount,
+        0
+      )
+
+  const investments =
+    transactions
+      .filter(
+        (item) =>
+          item.type ===
+          'investment'
+      )
+      .reduce(
+        (acc, item) =>
+          acc + item.amount,
+        0
+      )
+
+  const saved =
+    transactions
+      .filter(
+        (item) =>
+          item.type ===
+          'saved'
+      )
+      .reduce(
+        (acc, item) =>
+          acc + item.amount,
+        0
+      )
+
+  const availableBalance =
+    Math.max(
+      incomes - expenses,
+      0
+    )
+
+  const wealthData = [
+    {
+      name: 'Disponível',
+      value: availableBalance,
+    },
+
+    {
+      name: 'Investimentos',
+      value: investments,
+    },
+
+    {
+      name: 'Guardado',
+      value: saved,
+    },
+  ]
 
   return (
     <div className="min-h-screen bg-black text-white pb-28">
 
-      <div className="max-w-2xl mx-auto p-4 flex flex-col gap-4">
+      <div className="max-w-xl mx-auto p-4 flex flex-col gap-4">
 
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
 
           <div className="flex items-center gap-3">
 
-            <label className="cursor-pointer relative">
+            <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-green-500">
 
-              {avatar ? (
-                <img
-                  src={avatar}
-                  className="w-14 h-14 rounded-full object-cover border-2 border-green-500"
-                />
-              ) : (
-                <div className="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center text-xl font-bold">
-                  {userName
-                    .charAt(0)
-                    .toUpperCase()}
-                </div>
-              )}
-
-              <input
-                type="file"
-                accept="image/*"
-                onChange={
-                  handleAvatarChange
-                }
-                className="hidden"
+              <img
+                src="https://i.pravatar.cc/150"
+                className="w-full h-full object-cover"
               />
 
-            </label>
+            </div>
 
             <div>
 
-              <h1 className="text-2xl font-bold">
+              <h1 className="text-3xl font-black">
                 Olá, {userName} 👋
               </h1>
 
@@ -512,7 +327,7 @@ export default function Dashboard({
                     true
                   )
                 }
-                className="text-sm text-green-400"
+                className="text-green-400 text-sm"
               >
                 Editar perfil
               </button>
@@ -522,8 +337,12 @@ export default function Dashboard({
           </div>
 
           <button
-            onClick={onLogout}
-            className="text-red-400 text-sm"
+            onClick={async () => {
+              await supabase.auth.signOut()
+
+              location.reload()
+            }}
+            className="text-red-400"
           >
             Sair
           </button>
@@ -531,7 +350,9 @@ export default function Dashboard({
         </div>
 
         <PremiumBalanceCard
-          balance={availableBalance}
+          balance={
+            availableBalance
+          }
         />
 
         <div className="grid grid-cols-2 gap-3">
@@ -542,7 +363,7 @@ export default function Dashboard({
             type="investment"
             onClick={() =>
               openBreakdown(
-                'investment_add',
+                'investment',
                 'Investimentos'
               )
             }
@@ -554,7 +375,7 @@ export default function Dashboard({
             type="saved"
             onClick={() =>
               openBreakdown(
-                'saved_add',
+                'saved',
                 'Dinheiro guardado'
               )
             }
@@ -566,74 +387,80 @@ export default function Dashboard({
           incomes={incomes}
           expenses={expenses}
           investmentsAdded={
-            investmentsAdded
+            investments
           }
-          savedAdded={savedAdded}
+          savedAdded={saved}
         />
 
         <WealthEvolutionChart
-          transactions={
-            allTransactions
-          }
-        />
-
-        <ExpenseAnalytics
-          transactions={transactions}
+          data={wealthData}
         />
 
         <GoalProgress
-          current={totalWealth}
-          target={Number(
-            monthlyGoal
-          )}
-        />
-
-        <FinancialGoalCard
-          title={goalTitle}
-          current={totalWealth}
-          target={Number(
-            goalTarget
-          )}
-        />
-
-        <FinancialInsights
-          incomes={incomes}
-          expenses={expenses}
-          investments={investments}
-          saved={saved}
+          current={
+            availableBalance
+          }
+          target={monthlyGoal}
         />
 
         <SmartAlerts
-          balance={availableBalance}
+          balance={
+            availableBalance
+          }
           expenses={expenses}
           incomes={incomes}
         />
 
-        <div className="bg-gray-900 p-4 rounded-2xl flex flex-col gap-3">
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex flex-col gap-3">
 
-          <h2 className="text-lg font-bold">
+          <h2 className="text-xl font-bold">
             Nova movimentação
           </h2>
 
           <input
-            type="month"
-            value={selectedMonth}
+            type="text"
+            placeholder="Descrição"
+            value={description}
             onChange={(e) =>
-              setSelectedMonth(
+              setDescription(
                 e.target.value
               )
             }
-            className="p-3 bg-gray-800 rounded-xl"
+            className="bg-gray-800 rounded-xl p-3"
+          />
+
+          <input
+            type="number"
+            placeholder="Valor"
+            value={amount}
+            onChange={(e) =>
+              setAmount(
+                e.target.value
+              )
+            }
+            className="bg-gray-800 rounded-xl p-3"
+          />
+
+          <input
+            type="text"
+            placeholder="Categoria"
+            value={category}
+            onChange={(e) =>
+              setCategory(
+                e.target.value
+              )
+            }
+            className="bg-gray-800 rounded-xl p-3"
           />
 
           <select
-            value={transactionMode}
+            value={type}
             onChange={(e) =>
-              setTransactionMode(
-                e.target.value as any
+              setType(
+                e.target.value
               )
             }
-            className="p-3 bg-gray-800 rounded-xl"
+            className="bg-gray-800 rounded-xl p-3"
           >
             <option value="income">
               Receita
@@ -643,141 +470,120 @@ export default function Dashboard({
               Despesa
             </option>
 
-            <option value="investment_add">
+            <option value="investment">
               Investimento
             </option>
 
-            <option value="investment_remove">
-              Retirar investimento
-            </option>
-
-            <option value="saved_add">
-              Guardar dinheiro
-            </option>
-
-            <option value="saved_remove">
-              Retirar guardado
+            <option value="saved">
+              Guardado
             </option>
 
           </select>
-
-          <input
-            placeholder="Categoria"
-            value={category}
-            onChange={(e) =>
-              setCategory(
-                e.target.value
-              )
-            }
-            className="p-3 bg-gray-800 rounded-xl"
-          />
-
-          <input
-            placeholder="Valor"
-            value={amount}
-            onChange={(e) =>
-              setAmount(
-                e.target.value
-              )
-            }
-            className="p-3 bg-gray-800 rounded-xl"
-          />
-
-          <input
-            placeholder="Descrição"
-            value={description}
-            onChange={(e) =>
-              setDescription(
-                e.target.value
-              )
-            }
-            className="p-3 bg-gray-800 rounded-xl"
-          />
-
-          {transactionMode ===
-            'expense' && (
-            <label className="flex items-center gap-3">
-
-              <input
-                type="checkbox"
-                checked={
-                  isInstallment
-                }
-                onChange={(e) =>
-                  setIsInstallment(
-                    e.target.checked
-                  )
-                }
-              />
-
-              Compra parcelada
-
-            </label>
-          )}
-
-          {isInstallment && (
-            <input
-              type="number"
-              min="2"
-              max="36"
-              value={installments}
-              onChange={(e) =>
-                setInstallments(
-                  e.target.value
-                )
-              }
-              className="p-3 bg-gray-800 rounded-xl"
-              placeholder="Parcelas"
-            />
-          )}
-
-          <label className="flex items-center gap-3">
-
-            <input
-              type="checkbox"
-              checked={recurring}
-              onChange={(e) =>
-                setRecurring(
-                  e.target.checked
-                )
-              }
-            />
-
-            Repetir automaticamente
-
-          </label>
 
           <button
             onClick={
               handleCreateTransaction
             }
-            className="bg-green-500 p-3 rounded-xl font-bold"
+            className="bg-green-500 hover:bg-green-600 transition-all rounded-xl p-3 font-bold"
           >
-            Salvar movimentação
+            Adicionar
           </button>
 
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
 
-          {transactions.map(
-            (transaction) => (
-              <TransactionHistoryCard
-                key={transaction.id}
-                transaction={
-                  transaction
-                }
-                onDelete={
-                  handleDeleteTransaction
-                }
-                onEdit={() =>
-                  setEditingTransaction(
-                    transaction
-                  )
-                }
-              />
-            )
-          )}
+          <div className="flex items-center justify-between mb-4">
+
+            <h2 className="text-xl font-bold">
+              Histórico
+            </h2>
+
+          </div>
+
+          <div className="flex flex-col gap-3">
+
+            {transactions.map(
+              (item) => (
+                <div
+                  key={item.id}
+                  className="bg-gray-800 rounded-2xl p-4"
+                >
+
+                  <div className="flex justify-between items-start">
+
+                    <div>
+
+                      <p className="font-bold">
+                        {
+                          item.description
+                        }
+                      </p>
+
+                      <p className="text-sm text-gray-400">
+                        {
+                          item.category
+                        }
+                      </p>
+
+                    </div>
+
+                    <div className="text-right">
+
+                      <p
+                        className={`font-bold ${
+                          item.type ===
+                          'income'
+                            ? 'text-green-400'
+                            : item.type ===
+                              'expense'
+                            ? 'text-red-400'
+                            : item.type ===
+                              'investment'
+                            ? 'text-green-300'
+                            : 'text-blue-400'
+                        }`}
+                      >
+                        {formatCurrency(
+                          item.amount
+                        )}
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  <div className="flex gap-2 mt-4">
+
+                    <button
+                      onClick={() =>
+                        setEditingTransaction(
+                          item
+                        )
+                      }
+                      className="flex-1 bg-yellow-500 text-black rounded-xl p-2 font-bold"
+                    >
+                      Editar
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        handleDeleteTransaction(
+                          item.id
+                        )
+                      }
+                      className="flex-1 bg-red-500 rounded-xl p-2 font-bold"
+                    >
+                      Excluir
+                    </button>
+
+                  </div>
+
+                </div>
+              )
+            )}
+
+          </div>
 
         </div>
 
@@ -785,8 +591,37 @@ export default function Dashboard({
 
       <BottomNav
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={
+          setActiveTab
+        }
       />
+
+      {showProfileModal && (
+        <ProfileModal
+          userName={userName}
+          avatar={null}
+          onClose={() =>
+            setShowProfileModal(
+              false
+            )
+          }
+        />
+      )}
+
+      {showBreakdown && (
+        <FinancialBreakdown
+          transactions={
+            transactions
+          }
+          type={breakdownType}
+          title={breakdownTitle}
+          onClose={() =>
+            setShowBreakdown(
+              false
+            )
+          }
+        />
+      )}
 
       {editingTransaction && (
         <EditTransactionModal
@@ -803,25 +638,6 @@ export default function Dashboard({
           }
         />
       )}
-
-      {showProfileModal && (
-        <ProfileModal
-          userName={userName}
-          avatar={avatar}
-          onClose={() =>
-            setShowProfileModal(
-              false
-            )
-          }
-        />
-      )}
-
-      <FinancialBreakdown
-  transactions={transactions}
-  type={breakdownType}
-  title={breakdownTitle}
-  onClose={() => {}}
-/>
 
     </div>
   )

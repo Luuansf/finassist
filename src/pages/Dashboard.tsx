@@ -8,13 +8,13 @@ import {
   updateTransaction,
 } from '../services/transactions'
 
-import { uploadAvatar } from '../services/profile'
+import {
+  uploadAvatar,
+} from '../services/profile'
 
 import {
   supabase,
 } from '../services/supabase'
-
-import { formatCurrency } from '../utils/formatCurrency'
 
 import SummaryCard from '../components/SummaryCard'
 
@@ -71,17 +71,23 @@ export default function Dashboard({
   const [description, setDescription] =
     useState('')
 
-  const [monthlyGoal, setMonthlyGoal] =
-    useState('')
+  const [monthlyGoal] =
+    useState('5000')
 
-  const [goalTitle, setGoalTitle] =
-    useState('Minha meta')
+  const [goalTitle] =
+    useState('Reserva financeira')
 
-  const [goalTarget, setGoalTarget] =
-    useState('')
+  const [goalTarget] =
+    useState('10000')
 
   const [recurring, setRecurring] =
     useState(false)
+
+  const [isInstallment, setIsInstallment] =
+    useState(false)
+
+  const [installments, setInstallments] =
+    useState('2')
 
   const [transactionMode, setTransactionMode] =
     useState<
@@ -100,10 +106,10 @@ export default function Dashboard({
     useState<any[]>([])
 
   const [breakdownType, setBreakdownType] =
-    useState('')
+    useState('expense')
 
   const [breakdownTitle, setBreakdownTitle] =
-    useState('')
+    useState('Despesas')
 
   const [userName, setUserName] =
     useState('Usuário')
@@ -219,6 +225,23 @@ export default function Dashboard({
         .replace(/\./g, '')
         .replace(',', '.')
     )
+  }
+
+  function addMonths(
+    month: string,
+    amount: number
+  ) {
+    const [year, mon] =
+      month.split('-').map(Number)
+
+    const date = new Date(
+      year,
+      mon - 1 + amount
+    )
+
+    return `${date.getFullYear()}-${String(
+      date.getMonth() + 1
+    ).padStart(2, '0')}`
   }
 
   const incomes = transactions
@@ -337,110 +360,73 @@ export default function Dashboard({
         availableBalance
     ) {
       alert(
-        'Saldo insuficiente para despesa'
+        'Saldo insuficiente'
       )
       return
     }
+
+    const totalInstallments =
+      Number(installments)
+
+    const installmentGroup =
+      crypto.randomUUID()
 
     if (
+      isInstallment &&
       transactionMode ===
-        'investment_add' &&
-      formattedAmount >
-        availableBalance
+        'expense'
     ) {
-      alert(
-        'Saldo insuficiente para investir'
-      )
-      return
-    }
+      const installmentValue =
+        formattedAmount /
+        totalInstallments
 
-    if (
-      transactionMode ===
-        'saved_add' &&
-      formattedAmount >
-        availableBalance
-    ) {
-      alert(
-        'Saldo insuficiente para guardar'
-      )
-      return
-    }
-
-    if (
-      transactionMode ===
-        'investment_remove' &&
-      formattedAmount >
-        investments
-    ) {
-      alert(
-        'Você não possui esse valor investido'
-      )
-      return
-    }
-
-    if (
-      transactionMode ===
-        'saved_remove' &&
-      formattedAmount >
-        saved
-    ) {
-      alert(
-        'Você não possui esse valor guardado'
-      )
-      return
-    }
-
-    let finalType = ''
-
-    switch (transactionMode) {
-      case 'income':
-        finalType = 'income'
-        break
-
-      case 'expense':
-        finalType = 'expense'
-        break
-
-      case 'investment_add':
-        finalType =
-          'investment_add'
-        break
-
-      case 'investment_remove':
-        finalType =
-          'investment_remove'
-        break
-
-      case 'saved_add':
-        finalType = 'saved_add'
-        break
-
-      case 'saved_remove':
-        finalType =
-          'saved_remove'
-        break
-    }
-
-    const created =
+      for (
+        let i = 0;
+        i < totalInstallments;
+        i++
+      ) {
+        await createTransaction({
+          user_id: userId,
+          type: 'expense',
+          category,
+          amount:
+            Number(
+              installmentValue.toFixed(
+                2
+              )
+            ),
+          description,
+          month: addMonths(
+            selectedMonth,
+            i
+          ),
+          recurring: false,
+          installment_number:
+            i + 1,
+          installment_total:
+            totalInstallments,
+          installment_group:
+            installmentGroup,
+        } as any)
+      }
+    } else {
       await createTransaction({
         user_id: userId,
-        type: finalType,
+        type: transactionMode,
         category,
         amount: formattedAmount,
         description,
         month: selectedMonth,
         recurring,
-      })
-
-    if (created.error) {
-      alert(created.error.message)
-      return
+      } as any)
     }
 
     setCategory('')
     setAmount('')
     setDescription('')
     setRecurring(false)
+    setIsInstallment(false)
+    setInstallments('2')
 
     loadTransactions()
     loadAllTransactions()
@@ -449,22 +435,7 @@ export default function Dashboard({
   async function handleDeleteTransaction(
     id: string
   ) {
-    const confirmDelete =
-      confirm(
-        'Deseja excluir esta movimentação?'
-      )
-
-    if (!confirmDelete) return
-
-    const result =
-      await deleteTransaction(id)
-
-    if (result.error) {
-      alert(
-        result.error.message
-      )
-      return
-    }
+    await deleteTransaction(id)
 
     loadTransactions()
     loadAllTransactions()
@@ -475,18 +446,10 @@ export default function Dashboard({
   ) {
     if (!editingTransaction) return
 
-    const result =
-      await updateTransaction(
-        editingTransaction.id,
-        data
-      )
-
-    if (result.error) {
-      alert(
-        result.error.message
-      )
-      return
-    }
+    await updateTransaction(
+      editingTransaction.id,
+      data
+    )
 
     setEditingTransaction(null)
 
@@ -525,10 +488,6 @@ export default function Dashboard({
                     .toUpperCase()}
                 </div>
               )}
-
-              <div className="absolute -bottom-1 -right-1 bg-black px-1 rounded text-xs">
-                📷
-              </div>
 
               <input
                 type="file"
@@ -571,402 +530,263 @@ export default function Dashboard({
 
         </div>
 
-        {activeTab === 'home' && (
-          <>
+        <PremiumBalanceCard
+          balance={availableBalance}
+        />
 
-            <PremiumBalanceCard
-              title="Saldo disponível"
-              amount={formatCurrency(
-                availableBalance
-              )}
-              subtitle="Valor livre para uso"
-              gradient="bg-gradient-to-br from-green-500 to-emerald-700"
-            />
+        <div className="grid grid-cols-2 gap-3">
 
-            <PremiumBalanceCard
-              title="Patrimônio total"
-              amount={formatCurrency(
-                totalWealth
-              )}
-              subtitle="Investimentos + guardado"
-              gradient="bg-gradient-to-br from-indigo-500 to-purple-700"
-            />
+          <SummaryCard
+            title="Investimentos"
+            amount={investments}
+            type="investment"
+            onClick={() =>
+              openBreakdown(
+                'investment_add',
+                'Investimentos'
+              )
+            }
+          />
 
-            <FinancialInsights
-              incomes={incomes}
-              expenses={expenses}
-              investments={investments}
-              saved={saved}
-            />
+          <SummaryCard
+            title="Guardado"
+            amount={saved}
+            type="saved"
+            onClick={() =>
+              openBreakdown(
+                'saved_add',
+                'Dinheiro guardado'
+              )
+            }
+          />
 
-            <WealthEvolutionChart
-              transactions={allTransactions}
-            />
+        </div>
 
-            <GoalProgress
-              current={totalWealth}
-              goal={
-                Number(monthlyGoal) || 0
-              }
-            />
+        <MonthlyFlowCard
+          incomes={incomes}
+          expenses={expenses}
+          investmentsAdded={
+            investmentsAdded
+          }
+          savedAdded={savedAdded}
+        />
 
-            <FinancialGoalCard
-              title={goalTitle}
-              current={totalWealth}
-              target={Number(goalTarget)}
-            />
+        <WealthEvolutionChart
+          transactions={
+            allTransactions
+          }
+        />
 
-            <MonthlyFlowCard
-              incomes={incomes}
-              expenses={expenses}
-              investmentsAdded={
-                investmentsAdded
-              }
-              savedAdded={savedAdded}
-            />
+        <ExpenseAnalytics
+          transactions={transactions}
+        />
 
-            <ExpenseAnalytics
-              transactions={transactions}
-            />
+        <GoalProgress
+          current={totalWealth}
+          target={Number(
+            monthlyGoal
+          )}
+        />
 
-            <SmartAlerts
-              incomes={incomes}
-              expenses={expenses}
-              availableBalance={
-                availableBalance
-              }
-              investments={investments}
-              saved={saved}
-            />
+        <FinancialGoalCard
+          title={goalTitle}
+          current={totalWealth}
+          target={Number(
+            goalTarget
+          )}
+        />
 
-            <div className="grid grid-cols-2 gap-2">
+        <FinancialInsights
+          incomes={incomes}
+          expenses={expenses}
+          investments={investments}
+          saved={saved}
+        />
 
-              <div
-                onClick={() =>
-                  openBreakdown(
-                    'income',
-                    'Receitas'
-                  )
-                }
-              >
-                <SummaryCard
-                  title="Receitas"
-                  amount={formatCurrency(
-                    incomes
-                  )}
-                  color="bg-green-500"
-                />
-              </div>
+        <SmartAlerts
+          balance={availableBalance}
+          expenses={expenses}
+          incomes={incomes}
+        />
 
-              <div
-                onClick={() =>
-                  openBreakdown(
-                    'expense',
-                    'Despesas'
-                  )
-                }
-              >
-                <SummaryCard
-                  title="Despesas"
-                  amount={formatCurrency(
-                    expenses
-                  )}
-                  color="bg-red-500"
-                />
-              </div>
+        <div className="bg-gray-900 p-4 rounded-2xl flex flex-col gap-3">
 
-              <div
-                onClick={() =>
-                  openBreakdown(
-                    'investment',
-                    'Investimentos'
-                  )
-                }
-              >
-                <SummaryCard
-                  title="Investimentos"
-                  amount={formatCurrency(
-                    investments
-                  )}
-                  color="bg-yellow-500"
-                />
-              </div>
+          <h2 className="text-lg font-bold">
+            Nova movimentação
+          </h2>
 
-              <div
-                onClick={() =>
-                  openBreakdown(
-                    'saved',
-                    'Guardado'
-                  )
-                }
-              >
-                <SummaryCard
-                  title="Guardado"
-                  amount={formatCurrency(
-                    saved
-                  )}
-                  color="bg-purple-500"
-                />
-              </div>
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={(e) =>
+              setSelectedMonth(
+                e.target.value
+              )
+            }
+            className="p-3 bg-gray-800 rounded-xl"
+          />
 
-            </div>
+          <select
+            value={transactionMode}
+            onChange={(e) =>
+              setTransactionMode(
+                e.target.value as any
+              )
+            }
+            className="p-3 bg-gray-800 rounded-xl"
+          >
+            <option value="income">
+              Receita
+            </option>
 
-          </>
-        )}
+            <option value="expense">
+              Despesa
+            </option>
 
-        {activeTab === 'add' && (
-          <div className="bg-gray-900 p-4 rounded-2xl flex flex-col gap-3">
+            <option value="investment_add">
+              Investimento
+            </option>
 
-            <select
-              value={transactionMode}
-              onChange={(e) =>
-                setTransactionMode(
-                  e.target.value as any
-                )
-              }
-              className="p-3 bg-gray-800 rounded-xl"
-            >
-              <option value="income">
-                Receita
-              </option>
+            <option value="investment_remove">
+              Retirar investimento
+            </option>
 
-              <option value="expense">
-                Despesa
-              </option>
+            <option value="saved_add">
+              Guardar dinheiro
+            </option>
 
-              <option value="investment_add">
-                Adicionar investimento
-              </option>
+            <option value="saved_remove">
+              Retirar guardado
+            </option>
 
-              <option value="investment_remove">
-                Retirar investimento
-              </option>
+          </select>
 
-              <option value="saved_add">
-                Guardar dinheiro
-              </option>
+          <input
+            placeholder="Categoria"
+            value={category}
+            onChange={(e) =>
+              setCategory(
+                e.target.value
+              )
+            }
+            className="p-3 bg-gray-800 rounded-xl"
+          />
 
-              <option value="saved_remove">
-                Retirar guardado
-              </option>
+          <input
+            placeholder="Valor"
+            value={amount}
+            onChange={(e) =>
+              setAmount(
+                e.target.value
+              )
+            }
+            className="p-3 bg-gray-800 rounded-xl"
+          />
 
-            </select>
+          <input
+            placeholder="Descrição"
+            value={description}
+            onChange={(e) =>
+              setDescription(
+                e.target.value
+              )
+            }
+            className="p-3 bg-gray-800 rounded-xl"
+          />
 
-            <input
-              placeholder="Categoria"
-              value={category}
-              onChange={(e) =>
-                setCategory(
-                  e.target.value
-                )
-              }
-              className="p-3 bg-gray-800 rounded-xl"
-            />
-
-            <input
-              placeholder="Valor"
-              value={amount}
-              onChange={(e) =>
-                setAmount(
-                  e.target.value
-                )
-              }
-              className="p-3 bg-gray-800 rounded-xl"
-            />
-
-            <input
-              placeholder="Descrição"
-              value={description}
-              onChange={(e) =>
-                setDescription(
-                  e.target.value
-                )
-              }
-              className="p-3 bg-gray-800 rounded-xl"
-            />
-
-            <label className="flex items-center gap-3 bg-gray-800 p-3 rounded-xl">
+          {transactionMode ===
+            'expense' && (
+            <label className="flex items-center gap-3">
 
               <input
                 type="checkbox"
-                checked={recurring}
+                checked={
+                  isInstallment
+                }
                 onChange={(e) =>
-                  setRecurring(
+                  setIsInstallment(
                     e.target.checked
                   )
                 }
               />
 
-              <span>
-                Repetir automaticamente todo mês
-              </span>
+              Compra parcelada
 
             </label>
+          )}
 
-            <button
-              onClick={
-                handleCreateTransaction
-              }
-              className="bg-green-500 p-3 rounded-xl font-bold"
-            >
-              Salvar movimentação
-            </button>
-
-          </div>
-        )}
-
-        {activeTab === 'profile' && (
-          <div className="flex flex-col gap-4">
-
-            <div className="bg-gray-900 border border-gray-700 p-4 rounded-2xl flex flex-col gap-4">
-
-              <div>
-
-                <p className="text-sm mb-2">
-                  Selecione o mês
-                </p>
-
-                <input
-                  type="month"
-                  value={
-                    selectedMonth
-                  }
-                  onChange={(e) =>
-                    setSelectedMonth(
-                      e.target.value
-                    )
-                  }
-                  className="w-full p-3 bg-gray-800 rounded-xl"
-                />
-
-              </div>
-
-              <div>
-
-                <p className="text-sm mb-2">
-                  Meta patrimonial
-                </p>
-
-                <input
-                  className="w-full p-3 bg-gray-800 rounded-xl"
-                  placeholder="Ex: 100000"
-                  value={monthlyGoal}
-                  onChange={(e) =>
-                    setMonthlyGoal(
-                      e.target.value
-                    )
-                  }
-                />
-
-              </div>
-
-              <div>
-
-                <p className="text-sm mb-2">
-                  Nome da meta
-                </p>
-
-                <input
-                  className="w-full p-3 bg-gray-800 rounded-xl"
-                  placeholder="Ex: Comprar carro"
-                  value={goalTitle}
-                  onChange={(e) =>
-                    setGoalTitle(
-                      e.target.value
-                    )
-                  }
-                />
-
-              </div>
-
-              <div>
-
-                <p className="text-sm mb-2">
-                  Valor da meta
-                </p>
-
-                <input
-                  className="w-full p-3 bg-gray-800 rounded-xl"
-                  placeholder="Ex: 50000"
-                  value={goalTarget}
-                  onChange={(e) =>
-                    setGoalTarget(
-                      e.target.value
-                    )
-                  }
-                />
-
-              </div>
-
-            </div>
-
-            <div className="flex flex-col gap-3">
-
-              <h2 className="text-xl font-bold">
-                Histórico financeiro
-              </h2>
-
-              {transactions.length === 0 && (
-                <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 text-center text-gray-400">
-                  Nenhuma movimentação neste mês
-                </div>
-              )}
-
-              {transactions.map(
-                (transaction) => (
-                  <TransactionHistoryCard
-                    key={transaction.id}
-                    transaction={
-                      transaction
-                    }
-                    onDelete={
-                      handleDeleteTransaction
-                    }
-                    onEdit={() =>
-                      setEditingTransaction(
-                        transaction
-                      )
-                    }
-                  />
+          {isInstallment && (
+            <input
+              type="number"
+              min="2"
+              max="36"
+              value={installments}
+              onChange={(e) =>
+                setInstallments(
+                  e.target.value
                 )
-              )}
+              }
+              className="p-3 bg-gray-800 rounded-xl"
+              placeholder="Parcelas"
+            />
+          )}
 
-            </div>
+          <label className="flex items-center gap-3">
 
-          </div>
-        )}
+            <input
+              type="checkbox"
+              checked={recurring}
+              onChange={(e) =>
+                setRecurring(
+                  e.target.checked
+                )
+              }
+            />
+
+            Repetir automaticamente
+
+          </label>
+
+          <button
+            onClick={
+              handleCreateTransaction
+            }
+            className="bg-green-500 p-3 rounded-xl font-bold"
+          >
+            Salvar movimentação
+          </button>
+
+        </div>
+
+        <div className="flex flex-col gap-3">
+
+          {transactions.map(
+            (transaction) => (
+              <TransactionHistoryCard
+                key={transaction.id}
+                transaction={
+                  transaction
+                }
+                onDelete={
+                  handleDeleteTransaction
+                }
+                onEdit={() =>
+                  setEditingTransaction(
+                    transaction
+                  )
+                }
+              />
+            )
+          )}
+
+        </div>
 
       </div>
 
       <BottomNav
-        active={activeTab}
-        onChange={setActiveTab}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
       />
-
-      {breakdownType && (
-        <FinancialBreakdown
-          title={breakdownTitle}
-          type={breakdownType}
-          transactions={transactions}
-          onClose={() =>
-            setBreakdownType('')
-          }
-        />
-      )}
-
-      {showProfileModal && (
-        <ProfileModal
-          currentName={userName}
-          onClose={() =>
-            setShowProfileModal(
-              false
-            )
-          }
-          onUpdated={(newName) =>
-            setUserName(newName)
-          }
-        />
-      )}
 
       {editingTransaction && (
         <EditTransactionModal
@@ -983,6 +803,25 @@ export default function Dashboard({
           }
         />
       )}
+
+      {showProfileModal && (
+        <ProfileModal
+          userName={userName}
+          avatar={avatar}
+          onClose={() =>
+            setShowProfileModal(
+              false
+            )
+          }
+        />
+      )}
+
+      <FinancialBreakdown
+  transactions={transactions}
+  type={breakdownType}
+  title={breakdownTitle}
+  onClose={() => {}}
+/>
 
     </div>
   )

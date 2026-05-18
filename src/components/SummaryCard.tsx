@@ -1,25 +1,38 @@
+import { formatCurrency } from '../utils/formatCurrency'
+
 type Props = {
   title: string
-  amount: string
-  color: string
+  amount: number
+  type: 'investment' | 'saved'
+  onClick?: () => void
 }
 
 export default function SummaryCard({
   title,
   amount,
-  color,
+  type,
+  onClick,
 }: Props) {
   return (
     <div
-      className={`${color} p-4 rounded-2xl`}
+      onClick={onClick}
+      className="bg-gray-900 border border-gray-800 rounded-2xl p-4 cursor-pointer active:scale-[0.98] transition-all"
     >
-      <h2 className="text-sm">
+
+      <p className="text-sm text-gray-400">
         {title}
+      </p>
+
+      <h2
+        className={`text-2xl font-bold mt-2 ${
+          type === 'investment'
+            ? 'text-green-400'
+            : 'text-blue-400'
+        }`}
+      >
+        {formatCurrency(amount)}
       </h2>
 
-      <p className="text-2xl font-bold">
-        {amount}
-      </p>
     </div>
   )
 }

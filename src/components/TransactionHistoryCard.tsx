@@ -27,6 +27,31 @@ export default function TransactionHistoryCard({
       transaction.category || ''
     )
 
+  function getTypeLabel() {
+    switch (transaction.type) {
+      case 'income':
+        return 'Receita'
+
+      case 'expense':
+        return 'Despesa'
+
+      case 'investment_add':
+        return 'Investimento'
+
+      case 'investment_remove':
+        return 'Retirada investimento'
+
+      case 'saved_add':
+        return 'Guardado'
+
+      case 'saved_remove':
+        return 'Retirada guardado'
+
+      default:
+        return 'Movimentação'
+    }
+  }
+
   return (
     <div
       onClick={onEdit}
@@ -41,7 +66,7 @@ export default function TransactionHistoryCard({
           {style.icon}
         </div>
 
-        <div>
+        <div className="flex flex-col">
 
           <h3 className="font-semibold">
             {transaction.category}
@@ -51,11 +76,32 @@ export default function TransactionHistoryCard({
             {transaction.description}
           </p>
 
-          {transaction.recurring && (
-            <p className="text-xs text-green-400 mt-1">
-              🔁 Recorrente
-            </p>
-          )}
+          <div className="flex flex-wrap gap-2 mt-2">
+
+            <span className="text-xs bg-gray-800 px-2 py-1 rounded-full text-gray-300">
+              {getTypeLabel()}
+            </span>
+
+            {transaction.recurring && (
+              <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded-full">
+                Recorrente
+              </span>
+            )}
+
+            {transaction.installment_total && (
+              <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded-full">
+                Parcela{' '}
+                {
+                  transaction.installment_number
+                }
+                /
+                {
+                  transaction.installment_total
+                }
+              </span>
+            )}
+
+          </div>
 
         </div>
 

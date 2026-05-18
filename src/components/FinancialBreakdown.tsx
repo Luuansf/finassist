@@ -1,18 +1,16 @@
-import { categoryConfig } from '../utils/categoryConfig'
-
 import { formatCurrency } from '../utils/formatCurrency'
 
 type Props = {
-  title: string
-  type: string
   transactions: any[]
+  type: string
+  title: string
   onClose: () => void
 }
 
 export default function FinancialBreakdown({
-  title,
-  type,
   transactions,
+  type,
+  title,
   onClose,
 }: Props) {
   const filtered =
@@ -20,33 +18,14 @@ export default function FinancialBreakdown({
       (t) => t.type === type
     )
 
-  const grouped: Record<
-    string,
-    number
-  > = {}
-
-  filtered.forEach((t) => {
-    const category =
-      t.category?.toLowerCase() ||
-      'outros'
-
-    grouped[category] =
-      (grouped[category] || 0) +
-      Number(t.amount)
-  })
-
-  const total = Object.values(
-    grouped
-  ).reduce((a, b) => a + b, 0)
-
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
 
-      <div className="bg-gray-900 w-full max-w-md rounded-2xl p-4 flex flex-col gap-3">
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-5 w-full max-w-md max-h-[80vh] overflow-y-auto">
 
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mb-4">
 
-          <h2 className="text-xl font-bold text-white">
+          <h2 className="text-xl font-bold">
             {title}
           </h2>
 
@@ -59,56 +38,33 @@ export default function FinancialBreakdown({
 
         </div>
 
-        {Object.entries(grouped).map(
-          ([category, amount]) => {
-            const config =
-              categoryConfig[
-                category
-              ] ||
-              categoryConfig.outros
+        <div className="flex flex-col gap-3">
 
-            const percentage =
-              total > 0
-                ? (
-                    (amount / total) *
-                    100
-                  ).toFixed(1)
-                : 0
+          {filtered.map((item) => (
+            <div
+              key={item.id}
+              className="bg-gray-800 rounded-xl p-3 flex justify-between"
+            >
+              <div>
+                <p className="font-semibold">
+                  {item.category}
+                </p>
 
-            return (
-              <div
-                key={category}
-                className={`p-3 rounded-xl flex justify-between items-center ${config.color}`}
-              >
-
-                <div className="flex items-center gap-3">
-
-                  <span className="text-2xl">
-                    {config.icon}
-                  </span>
-
-                  <div>
-                    <h3 className="capitalize font-bold">
-                      {category}
-                    </h3>
-
-                    <p className="text-xs">
-                      {percentage}% do total
-                    </p>
-                  </div>
-
-                </div>
-
-                <strong>
-                  {formatCurrency(
-                    amount
-                  )}
-                </strong>
-
+                <p className="text-sm text-gray-400">
+                  {item.description}
+                </p>
               </div>
-            )
-          }
-        )}
+
+              <p className="font-bold">
+                {formatCurrency(
+                  item.amount
+                )}
+              </p>
+
+            </div>
+          ))}
+
+        </div>
 
       </div>
 

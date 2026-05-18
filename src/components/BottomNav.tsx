@@ -1,61 +1,79 @@
+import {
+  House,
+  Wallet,
+  Target,
+  User,
+} from 'lucide-react'
+
 type Props = {
-  active: string
-  onChange: (
+  activeTab: string
+  setActiveTab: (
     value: string
   ) => void
 }
 
 export default function BottomNav({
-  active,
-  onChange,
+  activeTab,
+  setActiveTab,
 }: Props) {
-  const tabs = [
+  const items = [
     {
       id: 'home',
-      label: 'Início',
-      icon: '🏠',
+      icon: House,
+      label: 'Home',
     },
+
     {
-      id: 'reports',
-      label: 'Relatórios',
-      icon: '📊',
+      id: 'wallet',
+      icon: Wallet,
+      label: 'Carteira',
     },
+
     {
-      id: 'add',
-      label: 'Adicionar',
-      icon: '➕',
+      id: 'goals',
+      icon: Target,
+      label: 'Metas',
     },
+
     {
       id: 'profile',
+      icon: User,
       label: 'Perfil',
-      icon: '👤',
     },
   ]
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-20 bg-gray-950 border-t border-gray-800 flex justify-around items-center z-50 backdrop-blur-lg">
+    <div className="fixed bottom-0 left-0 right-0 bg-gray-950 border-t border-gray-800 flex justify-around items-center h-20 z-40">
 
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() =>
-            onChange(tab.id)
-          }
-          className={`flex flex-col items-center justify-center transition-all duration-200 ${
-            active === tab.id
-              ? 'text-green-400 scale-110'
-              : 'text-gray-500'
-          }`}
-        >
-          <span className="text-xl">
-            {tab.icon}
-          </span>
+      {items.map((item) => {
+        const Icon = item.icon
 
-          <span className="text-xs mt-1">
-            {tab.label}
-          </span>
-        </button>
-      ))}
+        const active =
+          activeTab === item.id
+
+        return (
+          <button
+            key={item.id}
+            onClick={() =>
+              setActiveTab(
+                item.id
+              )
+            }
+            className={`flex flex-col items-center text-xs ${
+              active
+                ? 'text-green-400'
+                : 'text-gray-500'
+            }`}
+          >
+            <Icon size={22} />
+
+            <span className="mt-1">
+              {item.label}
+            </span>
+
+          </button>
+        )
+      })}
 
     </div>
   )

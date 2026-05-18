@@ -1,113 +1,61 @@
 type Props = {
-  incomes: number
+  balance: number
   expenses: number
-  availableBalance: number
-  investments: number
-  saved: number
+  incomes: number
 }
 
 export default function SmartAlerts({
-  incomes,
+  balance,
   expenses,
-  availableBalance,
-  investments,
-  saved,
+  incomes,
 }: Props) {
-  const alerts: string[] = []
+  const alerts = []
 
-  // =========================
-  // GASTOS ALTOS
-  // =========================
-
-  if (
-    incomes > 0 &&
-    expenses >= incomes * 0.8
-  ) {
+  if (balance <= 0) {
     alerts.push(
-      'Seus gastos já consumiram mais de 80% da sua receita mensal.'
+      'Seu saldo disponível acabou.'
     )
   }
 
-  // =========================
-  // SALDO BAIXO
-  // =========================
-
-  if (
-    availableBalance > 0 &&
-    availableBalance <=
-      incomes * 0.1
-  ) {
+  if (expenses > incomes) {
     alerts.push(
-      'Seu saldo disponível está muito baixo.'
+      'Você gastou mais do que recebeu este mês.'
     )
   }
 
-  // =========================
-  // SEM RESERVA
-  // =========================
-
-  if (
-    investments + saved <= 0
-  ) {
+  if (expenses > incomes * 0.8) {
     alerts.push(
-      'Você ainda não possui reserva financeira.'
+      'Suas despesas estão muito altas.'
     )
   }
-
-  // =========================
-  // DESPESAS MAIORES
-  // =========================
-
-  if (
-    expenses > incomes &&
-    incomes > 0
-  ) {
-    alerts.push(
-      'Suas despesas ultrapassaram sua receita mensal.'
-    )
-  }
-
-  // =========================
-  // SEM ALERTAS
-  // =========================
 
   if (alerts.length === 0) {
-    return (
-      <div className="bg-emerald-900/30 border border-emerald-700 rounded-2xl p-4">
-        <p className="text-emerald-400 font-semibold">
-          Sua saúde financeira está estável.
-        </p>
-      </div>
+    alerts.push(
+      'Sua saúde financeira está estável.'
     )
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex flex-col gap-3">
+    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
 
-      <div>
+      <h2 className="text-lg font-bold mb-4">
+        Alertas inteligentes
+      </h2>
 
-        <h2 className="text-lg font-bold">
-          Alertas inteligentes
-        </h2>
+      <div className="flex flex-col gap-3">
 
-        <p className="text-sm text-gray-400">
-          Análise automática das suas finanças
-        </p>
+        {alerts.map(
+          (alert, index) => (
+            <div
+              key={index}
+              className="bg-gray-800 rounded-xl p-3 text-sm"
+            >
+              {alert}
+            </div>
+          )
+        )}
 
       </div>
-
-      {alerts.map(
-        (alert, index) => (
-          <div
-            key={index}
-            className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3"
-          >
-            <p className="text-sm text-yellow-300">
-              ⚠️ {alert}
-            </p>
-          </div>
-        )
-      )}
 
     </div>
   )

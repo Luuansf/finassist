@@ -1,76 +1,46 @@
-import { useState } from 'react'
-
-import { supabase } from '../services/supabase'
-
 type Props = {
-  currentName: string
+  userName: string
+  avatar: string | null
   onClose: () => void
-  onUpdated: (
-    newName: string
-  ) => void
 }
 
 export default function ProfileModal({
-  currentName,
+  userName,
+  avatar,
   onClose,
-  onUpdated,
 }: Props) {
-  const [name, setName] =
-    useState(currentName)
-
-  async function handleSave() {
-    const { error } =
-      await supabase.auth.updateUser({
-        data: {
-          name,
-        },
-      })
-
-    if (error) {
-      alert(error.message)
-      return
-    }
-
-    onUpdated(name)
-
-    alert(
-      'Perfil atualizado!'
-    )
-
-    onClose()
-  }
-
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
 
-      <div className="bg-gray-900 w-full max-w-sm rounded-2xl p-4 flex flex-col gap-3">
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-5 w-full max-w-sm">
 
-        <h2 className="text-xl font-bold">
-          Editar perfil
-        </h2>
+        <div className="flex flex-col items-center gap-4">
 
-        <input
-          value={name}
-          onChange={(e) =>
-            setName(e.target.value)
-          }
-          placeholder="Seu apelido"
-          className="p-3 bg-gray-800 rounded-xl"
-        />
+          {avatar ? (
+            <img
+              src={avatar}
+              className="w-24 h-24 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-full bg-green-500 flex items-center justify-center text-3xl font-bold">
+              {userName
+                .charAt(0)
+                .toUpperCase()}
+            </div>
+          )}
 
-        <button
-          onClick={handleSave}
-          className="bg-green-500 p-3 rounded-xl font-bold"
-        >
-          Salvar
-        </button>
+          <h2 className="text-2xl font-bold">
+            {userName}
+          </h2>
 
-        <button
-          onClick={onClose}
-          className="bg-gray-700 p-3 rounded-xl"
-        >
-          Cancelar
-        </button>
+          <button
+            onClick={onClose}
+            className="w-full bg-green-500 p-3 rounded-xl font-bold"
+          >
+            Fechar
+          </button>
+
+        </div>
 
       </div>
 

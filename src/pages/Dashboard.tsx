@@ -30,6 +30,8 @@ import ExpenseAnalytics from '../components/ExpenseAnalytics'
 
 import FinancialGoalCard from '../components/FinancialGoalCard'
 
+import SmartNotifications from '../components/SmartNotifications'
+
 type Props = {
   user: any
 }
@@ -468,6 +470,15 @@ export default function Dashboard({
           transactions={
             transactions
           }
+        />
+
+        <SmartNotifications
+          incomes={incomes}
+          expenses={expenses}
+          balance={availableBalance}
+          investments={investments}
+          goals={goals}
+          saved={saved}
         />
 
         <WealthEvolutionChart

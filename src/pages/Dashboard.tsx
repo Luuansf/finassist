@@ -4,6 +4,8 @@ import { supabase } from '../services/supabase'
 
 import { formatCurrency } from '../utils/formatCurrency'
 
+import { categories } from '../constants/categories'
+
 import PremiumBalanceCard from '../components/PremiumBalanceCard'
 
 import SummaryCard from '../components/SummaryCard'
@@ -441,25 +443,15 @@ export default function Dashboard({
             className="bg-gray-800 rounded-xl p-3"
           />
 
-          <input
-            type="text"
-            placeholder="Categoria"
-            value={category}
-            onChange={(e) =>
-              setCategory(
-                e.target.value
-              )
-            }
-            className="bg-gray-800 rounded-xl p-3"
-          />
-
           <select
             value={type}
-            onChange={(e) =>
+            onChange={(e) => {
               setType(
                 e.target.value
               )
-            }
+
+              setCategory('')
+            }}
             className="bg-gray-800 rounded-xl p-3"
           >
             <option value="income">
@@ -478,6 +470,31 @@ export default function Dashboard({
               Guardado
             </option>
 
+          </select>
+
+          <select
+            value={category}
+            onChange={(e) =>
+              setCategory(
+                e.target.value
+              )
+            }
+            className="bg-gray-800 rounded-xl p-3"
+          >
+            <option value="">
+              Selecione categoria
+            </option>
+
+            {categories[
+              type as keyof typeof categories
+            ]?.map((item) => (
+              <option
+                key={item}
+                value={item}
+              >
+                {item}
+              </option>
+            ))}
           </select>
 
           <button

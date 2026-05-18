@@ -1,5 +1,4 @@
 import {
-  BrowserRouter,
   Routes,
   Route,
   Navigate,
@@ -9,7 +8,7 @@ import Dashboard from '../pages/Dashboard'
 
 import Login from '../pages/Login'
 
-import ProtectedRoute from './ProtectedRoute.tsx'
+import ProtectedRoute from './ProtectedRoute'
 
 type Props = {
   user: any
@@ -21,38 +20,34 @@ export default function AppRoutes({
   setUser,
 }: Props) {
   return (
-    <BrowserRouter>
+    <Routes>
 
-      <Routes>
+      <Route
+        path="/"
+        element={
+          user ? (
+            <Navigate to="/dashboard" />
+          ) : (
+            <Login
+              onLogin={setUser}
+            />
+          )
+        }
+      />
 
-        <Route
-          path="/"
-          element={
-            user ? (
-              <Navigate to="/dashboard" />
-            ) : (
-              <Login
-                onLogin={setUser}
-              />
-            )
-          }
-        />
-
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute
+            user={user}
+          >
+            <Dashboard
               user={user}
-            >
-              <Dashboard
-                user={user}
-              />
-            </ProtectedRoute>
-          }
-        />
+            />
+          </ProtectedRoute>
+        }
+      />
 
-      </Routes>
-
-    </BrowserRouter>
+    </Routes>
   )
 }

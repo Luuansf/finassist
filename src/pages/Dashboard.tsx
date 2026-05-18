@@ -36,6 +36,8 @@ import SmartNotifications from '../components/SmartNotifications'
 
 import MonthlyEvolutionChart from '../components/MonthlyEvolutionChart'
 
+import BudgetCard from '../components/BudgetCard'
+
 type Props = {
   user: any
 }
@@ -91,10 +93,18 @@ export default function Dashboard({
   const [userName, setUserName] =
     useState('Usuário')
 
+  const [budget, setBudget] =
+    useState('')
+
+  const [monthlyBudget, setMonthlyBudget] =
+    useState(0)
+
   useEffect(() => {
     loadTransactions()
 
     loadGoals()
+
+    loadBudget()
 
     const name =
       user?.user_metadata?.name
@@ -129,6 +139,47 @@ export default function Dashboard({
     if (data) {
       setGoals(data)
     }
+  }
+
+  async function loadBudget() {
+    const { data } =
+      await supabase
+        .from('budgets')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+    if (data) {
+      setMonthlyBudget(
+        Number(data.amount)
+      )
+    }
+  }
+
+  async function handleSaveBudget() {
+    if (!budget) {
+      return
+    }
+
+    const value =
+      Number(budget)
+
+    const { error } =
+      await supabase
+        .from('budgets')
+        .upsert({
+          user_id: user.id,
+          amount: value,
+        })
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    setMonthlyBudget(value)
+
+    setBudget('')
   }
 
   async function handleCreateGoal() {
@@ -484,6 +535,40 @@ export default function Dashboard({
         >
           Exportar relatório PDF
         </button>
+
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex flex-col gap-3">
+
+          <h2 className="text-xl font-bold">
+            Definir orçamento mensal
+          </h2>
+
+          <input
+            type="number"
+            placeholder="Ex: 5000"
+            value={budget}
+            onChange={(e) =>
+              setBudget(
+                e.target.value
+              )
+            }
+            className="bg-gray-800 rounded-xl p-3"
+          />
+
+          <button
+            onClick={
+              handleSaveBudget
+            }
+            className="bg-green-500 hover:bg-green-600 transition-all rounded-xl p-3 font-bold"
+          >
+            Salvar orçamento
+          </button>
+
+        </div>
+
+        <BudgetCard
+          budget={monthlyBudget}
+          expenses={expenses}
+        />
 
         <div className="grid grid-cols-2 gap-3">
 

@@ -2,9 +2,12 @@ import {
   LineChart,
   Line,
   XAxis,
+  YAxis,
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+
+import { formatCurrency } from '../utils/formatCurrency'
 
 type Props = {
   transactions: any[]
@@ -13,70 +16,112 @@ type Props = {
 export default function WealthEvolutionChart({
   transactions,
 }: Props) {
-  const grouped: any = {}
+  const monthlyMap: any = {}
 
-  transactions.forEach((t) => {
-    const month = t.month
+  let wealth = 0
 
-    if (!grouped[month]) {
-      grouped[month] = 0
-    }
+  const sorted =
+    [...transactions].sort(
+      (a, b) =>
+        new Date(a.created_at).getTime() -
+        new Date(b.created_at).getTime()
+    )
+
+  sorted.forEach((transaction) => {
+    const month =
+      transaction.month
 
     if (
-      t.type === 'investment_add' ||
-      t.type === 'saved_add'
+      transaction.type ===
+      'investment_add'
     ) {
-      grouped[month] += Number(
-        t.amount
+      wealth += Number(
+        transaction.amount
       )
     }
 
     if (
-      t.type ===
-        'investment_remove' ||
-      t.type === 'saved_remove'
+      transaction.type ===
+      'investment_remove'
     ) {
-      grouped[month] -= Number(
-        t.amount
+      wealth -= Number(
+        transaction.amount
       )
     }
+
+    if (
+      transaction.type ===
+      'saved_add'
+    ) {
+      wealth += Number(
+        transaction.amount
+      )
+    }
+
+    if (
+      transaction.type ===
+      'saved_remove'
+    ) {
+      wealth -= Number(
+        transaction.amount
+      )
+    }
+
+    if (wealth < 0) {
+      wealth = 0
+    }
+
+    monthlyMap[month] = wealth
   })
 
-  const orderedMonths =
-    Object.keys(grouped).sort()
-
-  let accumulated = 0
-
-  const data = orderedMonths.map(
-    (month) => {
-      accumulated += grouped[month]
-
-      return {
+  const data =
+    Object.entries(monthlyMap).map(
+      ([month, value]) => ({
         month,
-        patrimonio: accumulated,
-      }
-    }
-  )
+        wealth: value,
+      })
+    )
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
+    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 w-full min-h-[320px]">
 
-      <h2 className="text-lg font-bold mb-4">
-        Evolução Patrimonial
-      </h2>
+      <div className="mb-4">
 
-      <div className="w-full h-64">
+        <h2 className="text-lg font-bold">
+          Evolução patrimonial
+        </h2>
 
-        <ResponsiveContainer>
+        <p className="text-sm text-gray-400">
+          Crescimento do patrimônio ao longo do tempo
+        </p>
+
+      </div>
+
+      <div className="w-full h-[240px] min-h-[240px]">
+
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+        >
           <LineChart data={data}>
 
             <XAxis dataKey="month" />
 
-            <Tooltip />
+            <YAxis
+              tickFormatter={(value) =>
+                formatCurrency(value)
+              }
+            />
+
+            <Tooltip
+              formatter={(value: any) =>
+                formatCurrency(value)
+              }
+            />
 
             <Line
               type="monotone"
-              dataKey="patrimonio"
+              dataKey="wealth"
               stroke="#22c55e"
               strokeWidth={3}
             />

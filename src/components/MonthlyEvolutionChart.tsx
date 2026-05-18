@@ -1,115 +1,68 @@
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
   ResponsiveContainer,
-  CartesianGrid,
+  AreaChart,
+  Area,
+  XAxis,
+  Tooltip,
 } from 'recharts'
 
-type Transaction = {
-  month: string
-  type: string
-  amount: number
-}
+import { formatCurrency } from '../utils/formatCurrency'
 
 type Props = {
-  transactions: Transaction[]
+  data: {
+    month: string
+    value: number
+  }[]
 }
 
 export default function MonthlyEvolutionChart({
-  transactions,
+  data,
 }: Props) {
-
-  const monthsMap: Record<
-    string,
-    {
-      income: number
-      expense: number
-    }
-  > = {}
-
-  transactions.forEach((t) => {
-
-    if (!monthsMap[t.month]) {
-
-      monthsMap[t.month] = {
-        income: 0,
-        expense: 0,
-      }
-
-    }
-
-    if (t.type === 'income') {
-
-      monthsMap[t.month].income +=
-        Number(t.amount)
-
-    }
-
-    if (t.type === 'expense') {
-
-      monthsMap[t.month].expense +=
-        Number(t.amount)
-
-    }
-
-  })
-
-  const data = Object.keys(monthsMap)
-    .sort()
-    .map((month) => ({
-      month,
-
-      income:
-        monthsMap[month].income,
-
-      expense:
-        monthsMap[month].expense,
-    }))
-
   return (
-    <div className="bg-gray-800 p-6 rounded-2xl shadow-lg w-full">
+    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
 
-      <h2 className="text-2xl font-bold mb-4 text-white">
-        Evolução Mensal
-      </h2>
+      <div className="mb-4">
 
-      <div className="w-full min-h-[350px]">
+        <h2 className="text-lg font-bold">
+          Evolução financeira
+        </h2>
+
+        <p className="text-sm text-gray-400">
+          Crescimento patrimonial
+        </p>
+
+      </div>
+
+      <div className="w-full h-72">
 
         <ResponsiveContainer
           width="100%"
-          height={350}
+          height="100%"
         >
 
-          <LineChart data={data}>
+          <AreaChart data={data}>
 
-            <CartesianGrid
-              strokeDasharray="3 3"
+            <XAxis
+              dataKey="month"
             />
 
-            <XAxis dataKey="month" />
+            <Tooltip
+              formatter={(value) =>
+                formatCurrency(
+                  Number(value)
+                )
+              }
+            />
 
-            <YAxis />
-
-            <Tooltip />
-
-            <Line
+            <Area
               type="monotone"
-              dataKey="income"
+              dataKey="value"
               stroke="#22c55e"
-              name="Receitas"
+              fill="#22c55e"
+              fillOpacity={0.2}
             />
 
-            <Line
-              type="monotone"
-              dataKey="expense"
-              stroke="#ef4444"
-              name="Despesas"
-            />
-
-          </LineChart>
+          </AreaChart>
 
         </ResponsiveContainer>
 

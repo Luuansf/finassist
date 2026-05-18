@@ -32,6 +32,8 @@ import FinancialGoalCard from '../components/FinancialGoalCard'
 
 import SmartNotifications from '../components/SmartNotifications'
 
+import MonthlyEvolutionChart from '../components/MonthlyEvolutionChart'
+
 type Props = {
   user: any
 }
@@ -371,6 +373,32 @@ export default function Dashboard({
     },
   ]
 
+  const monthlyEvolution = [
+    {
+     month: 'JAN',
+     value:
+        availableBalance * 0.3,
+    },
+
+    {
+      month: 'FEV',
+      value:
+        availableBalance * 0.5,
+    },
+
+    {
+      month: 'MAR',
+      value:
+        availableBalance * 0.7,
+    },
+
+    {
+      month: 'ABR',
+      value:
+        availableBalance,
+    },
+  ]
+
   return (
     <div className="min-h-screen bg-black text-white pb-28">
 
@@ -479,6 +507,10 @@ export default function Dashboard({
           investments={investments}
           goals={goals}
           saved={saved}
+        />
+
+        <MonthlyEvolutionChart
+          data={monthlyEvolution}
         />
 
         <WealthEvolutionChart

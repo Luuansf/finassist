@@ -4,6 +4,8 @@ import { supabase } from '../services/supabase'
 
 import { formatCurrency } from '../utils/formatCurrency'
 
+import { exportFinancialReport } from '../utils/exportFinancialReport'
+
 import { categories } from '../constants/categories'
 
 import PremiumBalanceCard from '../components/PremiumBalanceCard'
@@ -375,8 +377,8 @@ export default function Dashboard({
 
   const monthlyEvolution = [
     {
-     month: 'JAN',
-     value:
+      month: 'JAN',
+      value:
         availableBalance * 0.3,
     },
 
@@ -457,6 +459,32 @@ export default function Dashboard({
           }
         />
 
+        <button
+          onClick={() =>
+            exportFinancialReport({
+              userName,
+
+              balance:
+                availableBalance,
+
+              incomes,
+
+              expenses,
+
+              investments,
+
+              saved,
+
+              goals,
+
+              transactions,
+            })
+          }
+          className="bg-blue-500 hover:bg-blue-600 transition-all rounded-2xl p-4 font-bold"
+        >
+          Exportar relatório PDF
+        </button>
+
         <div className="grid grid-cols-2 gap-3">
 
           <SummaryCard
@@ -503,14 +531,20 @@ export default function Dashboard({
         <SmartNotifications
           incomes={incomes}
           expenses={expenses}
-          balance={availableBalance}
-          investments={investments}
+          balance={
+            availableBalance
+          }
+          investments={
+            investments
+          }
           goals={goals}
           saved={saved}
         />
 
         <MonthlyEvolutionChart
-          data={monthlyEvolution}
+          data={
+            monthlyEvolution
+          }
         />
 
         <WealthEvolutionChart

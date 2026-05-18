@@ -7,11 +7,13 @@ import { getCategoryStyle } from '../utils/categoryStyles'
 type Props = {
   transaction: any
   onDelete: (id: string) => void
+  onEdit: () => void
 }
 
 export default function TransactionHistoryCard({
   transaction,
   onDelete,
+  onEdit,
 }: Props) {
   const isPositive =
     transaction.type === 'income' ||
@@ -26,7 +28,10 @@ export default function TransactionHistoryCard({
     )
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex items-center justify-between">
+    <div
+      onClick={onEdit}
+      className="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-all"
+    >
 
       <div className="flex items-center gap-3">
 
@@ -72,9 +77,11 @@ export default function TransactionHistoryCard({
         </p>
 
         <button
-          onClick={() =>
+          onClick={(e) => {
+            e.stopPropagation()
+
             onDelete(transaction.id)
-          }
+          }}
           className="text-red-400 hover:text-red-300"
         >
           <Trash2 size={18} />

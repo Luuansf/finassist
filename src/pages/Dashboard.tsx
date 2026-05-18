@@ -5,6 +5,7 @@ import {
   getTransactions,
   getAllTransactions,
   deleteTransaction,
+  updateTransaction,
 } from '../services/transactions'
 
 import { uploadAvatar } from '../services/profile'
@@ -40,6 +41,8 @@ import ExpenseAnalytics from '../components/ExpenseAnalytics'
 import FinancialGoalCard from '../components/FinancialGoalCard'
 
 import SmartAlerts from '../components/SmartAlerts'
+
+import EditTransactionModal from '../components/EditTransactionModal'
 
 type Props = {
   userId: string
@@ -111,9 +114,8 @@ export default function Dashboard({
   const [showProfileModal, setShowProfileModal] =
     useState(false)
 
-  // =========================
-  // USER
-  // =========================
+  const [editingTransaction, setEditingTransaction] =
+    useState<any | null>(null)
 
   useEffect(() => {
     async function loadUserData() {
@@ -139,10 +141,6 @@ export default function Dashboard({
 
     loadUserData()
   }, [])
-
-  // =========================
-  // AVATAR
-  // =========================
 
   async function handleAvatarChange(
     event: any
@@ -179,10 +177,6 @@ export default function Dashboard({
     }
   }
 
-  // =========================
-  // TRANSAÇÕES
-  // =========================
-
   async function loadTransactions() {
     const { data, error } =
       await getTransactions(
@@ -195,82 +189,7 @@ export default function Dashboard({
       return
     }
 
-    // =========================
-    // RECORRÊNCIA
-    // =========================
-
-    const recurringTransactions =
-      (data || []).filter(
-        (t) => t.recurring
-      )
-
-    const previousMonth =
-      new Date(selectedMonth + '-01')
-
-    previousMonth.setMonth(
-      previousMonth.getMonth() - 1
-    )
-
-    const previousMonthString =
-      previousMonth
-        .toISOString()
-        .slice(0, 7)
-
-    const {
-      data: oldTransactions,
-    } =
-      await getTransactions(
-        userId,
-        previousMonthString
-      )
-
-    const recurringOld =
-      (
-        oldTransactions || []
-      ).filter(
-        (t) => t.recurring
-      )
-
-    for (const transaction of recurringOld) {
-      const exists =
-        recurringTransactions.find(
-          (current) =>
-            current.category ===
-              transaction.category &&
-            current.amount ===
-              transaction.amount &&
-            current.type ===
-              transaction.type
-        )
-
-      if (!exists) {
-        await createTransaction({
-          user_id: userId,
-          type: transaction.type,
-          category:
-            transaction.category,
-          amount:
-            transaction.amount,
-          description:
-            transaction.description,
-          month: selectedMonth,
-          recurring: true,
-        })
-      }
-    }
-
-    // RECARREGA
-    const {
-      data: updatedData,
-    } =
-      await getTransactions(
-        userId,
-        selectedMonth
-      )
-
-    setTransactions(
-      updatedData || []
-    )
+    setTransactions(data || [])
   }
 
   async function loadAllTransactions() {
@@ -292,10 +211,6 @@ export default function Dashboard({
     loadAllTransactions()
   }, [selectedMonth])
 
-  // =========================
-  // FORMATADOR BR
-  // =========================
-
   function convertBrazilianValue(
     value: string
   ) {
@@ -305,10 +220,6 @@ export default function Dashboard({
         .replace(',', '.')
     )
   }
-
-  // =========================
-  // CÁLCULOS
-  // =========================
 
   const incomes = transactions
     .filter((t) => t.type === 'income')
@@ -405,10 +316,6 @@ export default function Dashboard({
   const totalWealth =
     investments + saved
 
-  // =========================
-  // CRIAR TRANSAÇÃO
-  // =========================
-
   async function handleCreateTransaction() {
     const formattedAmount =
       convertBrazilianValue(amount)
@@ -422,10 +329,6 @@ export default function Dashboard({
       )
       return
     }
-
-    // =========================
-    // VALIDAÇÕES
-    // =========================
 
     if (
       transactionMode ===
@@ -543,10 +446,6 @@ export default function Dashboard({
     loadAllTransactions()
   }
 
-  // =========================
-  // DELETAR TRANSAÇÃO
-  // =========================
-
   async function handleDeleteTransaction(
     id: string
   ) {
@@ -571,9 +470,29 @@ export default function Dashboard({
     loadAllTransactions()
   }
 
-  // =========================
-  // MODAL DETALHAMENTO
-  // =========================
+  async function handleUpdateTransaction(
+    data: any
+  ) {
+    if (!editingTransaction) return
+
+    const result =
+      await updateTransaction(
+        editingTransaction.id,
+        data
+      )
+
+    if (result.error) {
+      alert(
+        result.error.message
+      )
+      return
+    }
+
+    setEditingTransaction(null)
+
+    loadTransactions()
+    loadAllTransactions()
+  }
 
   function openBreakdown(
     type: string,
@@ -583,16 +502,11 @@ export default function Dashboard({
     setBreakdownTitle(title)
   }
 
-  // =========================
-  // RENDER
-  // =========================
-
   return (
     <div className="min-h-screen bg-black text-white pb-28">
 
       <div className="max-w-2xl mx-auto p-4 flex flex-col gap-4">
 
-        {/* HEADER */}
         <div className="flex justify-between items-center">
 
           <div className="flex items-center gap-3">
@@ -657,7 +571,6 @@ export default function Dashboard({
 
         </div>
 
-        {/* HOME */}
         {activeTab === 'home' && (
           <>
 
@@ -801,7 +714,6 @@ export default function Dashboard({
           </>
         )}
 
-        {/* ADD */}
         {activeTab === 'add' && (
           <div className="bg-gray-900 p-4 rounded-2xl flex flex-col gap-3">
 
@@ -903,7 +815,6 @@ export default function Dashboard({
           </div>
         )}
 
-        {/* PROFILE */}
         {activeTab === 'profile' && (
           <div className="flex flex-col gap-4">
 
@@ -1011,6 +922,11 @@ export default function Dashboard({
                     onDelete={
                       handleDeleteTransaction
                     }
+                    onEdit={() =>
+                      setEditingTransaction(
+                        transaction
+                      )
+                    }
                   />
                 )
               )}
@@ -1048,6 +964,22 @@ export default function Dashboard({
           }
           onUpdated={(newName) =>
             setUserName(newName)
+          }
+        />
+      )}
+
+      {editingTransaction && (
+        <EditTransactionModal
+          transaction={
+            editingTransaction
+          }
+          onClose={() =>
+            setEditingTransaction(
+              null
+            )
+          }
+          onSave={
+            handleUpdateTransaction
           }
         />
       )}

@@ -16,6 +16,7 @@ export async function createTransaction(
   return await supabase
     .from('transactions')
     .insert(data)
+    .select()
 }
 
 export async function getTransactions(
@@ -40,7 +41,7 @@ export async function getAllTransactions(
     .select('*')
     .eq('user_id', userId)
     .order('created_at', {
-      ascending: false,
+      ascending: true,
     })
 }
 
@@ -51,4 +52,23 @@ export async function deleteTransaction(
     .from('transactions')
     .delete()
     .eq('id', id)
+}
+
+export async function updateTransaction(
+  id: string,
+  data: any
+) {
+  return await supabase
+    .from('transactions')
+    .update(data)
+    .eq('id', id)
+}
+
+export async function getMonthlySummary(
+  userId: string
+) {
+  return await supabase
+    .from('transactions')
+    .select('month, type, amount')
+    .eq('user_id', userId)
 }

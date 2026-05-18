@@ -26,6 +26,10 @@ import FinancialBreakdown from '../components/FinancialBreakdown'
 
 import EditTransactionModal from '../components/EditTransactionModal'
 
+import ExpenseAnalytics from '../components/ExpenseAnalytics'
+
+import FinancialGoalCard from '../components/FinancialGoalCard'
+
 type Props = {
   user: any
 }
@@ -34,6 +38,9 @@ export default function Dashboard({
   user,
 }: Props) {
   const [transactions, setTransactions] =
+    useState<any[]>([])
+
+  const [goals, setGoals] =
     useState<any[]>([])
 
   const [description, setDescription] =
@@ -46,6 +53,12 @@ export default function Dashboard({
     useState('income')
 
   const [category, setCategory] =
+    useState('')
+
+  const [goalTitle, setGoalTitle] =
+    useState('')
+
+  const [goalTarget, setGoalTarget] =
     useState('')
 
   const [activeTab, setActiveTab] =
@@ -75,6 +88,8 @@ export default function Dashboard({
   useEffect(() => {
     loadTransactions()
 
+    loadGoals()
+
     const name =
       user?.user_metadata?.name
 
@@ -96,6 +111,61 @@ export default function Dashboard({
     if (data) {
       setTransactions(data)
     }
+  }
+
+  async function loadGoals() {
+    const { data } =
+      await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', user.id)
+
+    if (data) {
+      setGoals(data)
+    }
+  }
+
+  async function handleCreateGoal() {
+    if (
+      !goalTitle ||
+      !goalTarget
+    ) {
+      return
+    }
+
+    const {
+      data,
+      error,
+    } = await supabase
+      .from('goals')
+      .insert([
+        {
+          user_id: user.id,
+
+          title: goalTitle,
+
+          target:
+            Number(goalTarget),
+
+          current: saved,
+        },
+      ])
+      .select()
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    if (data) {
+      setGoals([
+        ...goals,
+        data[0],
+      ])
+    }
+
+    setGoalTitle('')
+    setGoalTarget('')
   }
 
   async function handleCreateTransaction() {
@@ -394,6 +464,12 @@ export default function Dashboard({
           savedAdded={saved}
         />
 
+        <ExpenseAnalytics
+          transactions={
+            transactions
+          }
+        />
+
         <WealthEvolutionChart
           data={wealthData}
         />
@@ -505,6 +581,60 @@ export default function Dashboard({
           >
             Adicionar
           </button>
+
+        </div>
+
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex flex-col gap-3">
+
+          <h2 className="text-xl font-bold">
+            Criar meta financeira
+          </h2>
+
+          <input
+            type="text"
+            placeholder="Nome da meta"
+            value={goalTitle}
+            onChange={(e) =>
+              setGoalTitle(
+                e.target.value
+              )
+            }
+            className="bg-gray-800 rounded-xl p-3"
+          />
+
+          <input
+            type="number"
+            placeholder="Valor objetivo"
+            value={goalTarget}
+            onChange={(e) =>
+              setGoalTarget(
+                e.target.value
+              )
+            }
+            className="bg-gray-800 rounded-xl p-3"
+          />
+
+          <button
+            onClick={
+              handleCreateGoal
+            }
+            className="bg-green-500 hover:bg-green-600 transition-all rounded-xl p-3 font-bold"
+          >
+            Criar meta
+          </button>
+
+        </div>
+
+        <div className="flex flex-col gap-4">
+
+          {goals.map((goal) => (
+            <FinancialGoalCard
+              key={goal.id}
+              title={goal.title}
+              current={saved}
+              target={goal.target}
+            />
+          ))}
 
         </div>
 

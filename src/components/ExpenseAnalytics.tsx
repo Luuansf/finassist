@@ -1,128 +1,165 @@
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts'
-
 import { formatCurrency } from '../utils/formatCurrency'
 
+type Transaction = {
+  amount: number
+  category: string
+  description: string
+  type: string
+}
+
 type Props = {
-  transactions: any[]
+  transactions: Transaction[]
 }
 
 export default function ExpenseAnalytics({
   transactions,
 }: Props) {
-  const expenseTransactions =
+  const expenses =
     transactions.filter(
-      (t) => t.type === 'expense'
+      (item) =>
+        item.type ===
+        'expense'
     )
 
-  const grouped =
-    expenseTransactions.reduce(
-      (acc: any, transaction) => {
-        const category =
-          transaction.category
-
-        if (!acc[category]) {
-          acc[category] = 0
-        }
-
-        acc[category] += Number(
-          transaction.amount
-        )
-
-        return acc
-      },
-      {}
+  const totalExpenses =
+    expenses.reduce(
+      (acc, item) =>
+        acc + item.amount,
+      0
     )
 
-  const data = Object.entries(
-    grouped
-  ).map(([name, value]) => ({
-    name,
-    value,
-  }))
+  const categoryMap: Record<
+    string,
+    number
+  > = {}
 
-  const COLORS = [
-    '#22c55e',
-    '#ef4444',
-    '#eab308',
-    '#3b82f6',
-    '#8b5cf6',
-    '#ec4899',
-    '#14b8a6',
-  ]
+  expenses.forEach((item) => {
+    if (
+      !categoryMap[
+        item.category
+      ]
+    ) {
+      categoryMap[
+        item.category
+      ] = 0
+    }
 
-  if (data.length === 0) {
-    return (
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
+    categoryMap[
+      item.category
+    ] += item.amount
+  })
 
-        <h2 className="text-lg font-bold mb-3">
-          Análise de despesas
-        </h2>
+  const topCategory =
+    Object.entries(
+      categoryMap
+    ).sort(
+      (a, b) => b[1] - a[1]
+    )[0]
 
-        <p className="text-gray-400 text-sm">
-          Nenhuma despesa registrada.
-        </p>
+  const biggestExpense =
+    expenses.sort(
+      (a, b) =>
+        b.amount - a.amount
+    )[0]
 
-      </div>
-    )
-  }
+  const dailyAverage =
+    totalExpenses / 30
+
+  const percentage =
+    topCategory
+      ? (
+          (topCategory[1] /
+            totalExpenses) *
+          100
+        ).toFixed(0)
+      : 0
 
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
 
-      <h2 className="text-lg font-bold mb-4">
-        Análise de despesas
-      </h2>
+      <div className="mb-4">
 
-      <div className="w-full h-[280px] min-h-[280px]">
+        <h2 className="text-lg font-bold">
+          Análise financeira
+        </h2>
 
-        <ResponsiveContainer
-          width="100%"
-          height="100%"
-        >
+        <p className="text-sm text-gray-400">
+          Insights automáticos dos seus gastos
+        </p>
 
-          <PieChart>
+      </div>
 
-            <Pie
-              data={data}
-              dataKey="value"
-              nameKey="name"
-              outerRadius={90}
-              label={(entry) =>
-                entry.name
-              }
-            >
+      <div className="flex flex-col gap-4">
 
-              {data.map(
-                (_, index) => (
-                  <Cell
-                    key={index}
-                    fill={
-                      COLORS[
-                        index %
-                          COLORS.length
-                      ]
-                    }
-                  />
+        <div className="bg-gray-800 rounded-xl p-3">
+
+          <p className="text-sm text-gray-400">
+            Categoria com maior gasto
+          </p>
+
+          <p className="font-bold text-lg mt-1">
+            {topCategory
+              ? topCategory[0]
+              : 'Sem dados'}
+          </p>
+
+          <p className="text-red-400 font-bold">
+            {topCategory
+              ? formatCurrency(
+                  topCategory[1]
                 )
-              )}
+              : 'R$ 0,00'}
+          </p>
 
-            </Pie>
+        </div>
 
-            <Tooltip
-              formatter={(value: any) =>
-                formatCurrency(value)
-              }
-            />
+        <div className="bg-gray-800 rounded-xl p-3">
 
-          </PieChart>
+          <p className="text-sm text-gray-400">
+            Percentual dos gastos
+          </p>
 
-        </ResponsiveContainer>
+          <p className="font-bold text-lg mt-1">
+            {percentage}%
+          </p>
+
+        </div>
+
+        <div className="bg-gray-800 rounded-xl p-3">
+
+          <p className="text-sm text-gray-400">
+            Maior despesa
+          </p>
+
+          <p className="font-bold text-lg mt-1">
+            {biggestExpense
+              ?.description ||
+              'Sem dados'}
+          </p>
+
+          <p className="text-red-400 font-bold">
+            {biggestExpense
+              ? formatCurrency(
+                  biggestExpense.amount
+                )
+              : 'R$ 0,00'}
+          </p>
+
+        </div>
+
+        <div className="bg-gray-800 rounded-xl p-3">
+
+          <p className="text-sm text-gray-400">
+            Média diária de gastos
+          </p>
+
+          <p className="font-bold text-lg mt-1 text-yellow-400">
+            {formatCurrency(
+              dailyAverage
+            )}
+          </p>
+
+        </div>
 
       </div>
 
